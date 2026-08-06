@@ -69,6 +69,13 @@ where id = '<UUID_ADMIN>';
 
 Không đưa email, mật khẩu hoặc UUID thật vào migration/seed/repository. Sau bootstrap, Admin mời các thành viên khác trong màn hình “Nhân sự & team”.
 
+Email mời và email khôi phục phải đưa người dùng qua `/auth/confirm` hoặc `/auth/callback`, sau đó tới `/auth/update-password`. Màn hình đăng nhập có liên kết “Quên mật khẩu”; phản hồi gửi email luôn dùng thông báo chung để không tiết lộ tài khoản có tồn tại. Trong Supabase Auth Email Templates, dùng liên kết token-hash phía server cho Invite user và Reset password để người dùng có thể mở email ở trình duyệt khác:
+
+```html
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=invite&next=/auth/update-password">Hoàn tất tài khoản</a>
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/auth/update-password">Đặt lại mật khẩu</a>
+```
+
 ## Kiểm tra
 
 - `npm run lint`

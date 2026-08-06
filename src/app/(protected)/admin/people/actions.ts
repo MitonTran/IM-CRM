@@ -74,7 +74,7 @@ export async function invitePerson(formData: FormData) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${appUrl}/auth/callback`,
+    redirectTo: `${appUrl}/auth/callback?next=/auth/update-password`,
     data: { full_name: parsed.data.fullName },
   });
   if (error || !data.user) {
