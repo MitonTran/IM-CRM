@@ -45,7 +45,7 @@ export async function invitePerson(formData: FormData) {
   const admin = createAdminClient();
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const { data, error } = await admin.auth.admin.inviteUserByEmail(parsed.data.email, {
-    redirectTo: `${appUrl}/auth/callback`,
+    redirectTo: `${appUrl}/auth/callback?next=/auth/update-password`,
     data: { full_name: parsed.data.fullName },
   });
   if (error || !data.user) redirect("/admin/people?error=invite-failed");

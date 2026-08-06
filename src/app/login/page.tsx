@@ -1,4 +1,5 @@
 import { ArrowRight, CheckCircle2, LockKeyhole, Sparkles } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
@@ -13,17 +14,23 @@ const errorMessages: Record<string, string> = {
   credentials: "Email hoặc mật khẩu chưa đúng.",
   inactive: "Tài khoản chưa được kích hoạt. Vui lòng liên hệ quản trị viên.",
   "not-configured": "Dự án chưa được kết nối Supabase.",
+  "recovery-expired": "Liên kết đặt mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu liên kết mới.",
 };
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+const statusMessages: Record<string, string> = {
+  "password-updated": "Mật khẩu đã được cập nhật. Bạn có thể đăng nhập ngay.",
+};
+
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; status?: string }> }) {
   if (hasSupabaseEnv()) {
     const supabase = await createClient();
     const { data } = await supabase.auth.getClaims();
     if (data?.claims) redirect("/dashboard");
   }
 
-  const { error } = await searchParams;
+  const { error, status } = await searchParams;
   const message = error ? errorMessages[error] ?? error : null;
+  const statusMessage = status ? statusMessages[status] : null;
 
   return (
     <main className="grid min-h-screen lg:grid-cols-[1.08fr_.92fr]">
@@ -52,6 +59,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <p className="mt-3 text-sm leading-6 text-[#718078]">Sử dụng tài khoản do quản trị viên cấp.</p>
 
           {message && <div role="alert" className="mt-6 rounded-xl border border-[#efc9c1] bg-[#fff3f0] px-4 py-3 text-sm text-[#9a3d30]">{message}</div>}
+          {statusMessage && <div role="status" className="mt-6 rounded-xl border border-[#bddbc8] bg-[#eff9f2] px-4 py-3 text-sm text-[#286342]">{statusMessage}</div>}
 
           <form action={login} className="mt-7 space-y-5">
             <label className="block text-sm font-semibold text-[#32483f]">Email
@@ -60,6 +68,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <label className="block text-sm font-semibold text-[#32483f]">Mật khẩu
               <Input className="mt-2" type="password" name="password" autoComplete="current-password" placeholder="Tối thiểu 8 ký tự" minLength={8} required />
             </label>
+            <div className="text-right"><Link className="focus-ring rounded text-sm font-semibold text-[#166b4f] hover:underline" href="/auth/forgot-password">Quên mật khẩu?</Link></div>
             <Button className="w-full" type="submit">Đăng nhập <ArrowRight size={17} /></Button>
           </form>
           <p className="mt-6 text-center text-xs leading-5 text-[#89948f]">Không chia sẻ tài khoản. Mọi thay đổi quan trọng đều được lưu lịch sử.</p>
