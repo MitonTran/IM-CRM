@@ -1,0 +1,37 @@
+name: Preview smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      preview_url:
+        description: Vercel Preview origin, ví dụ https://im-crm-git-branch.vercel.app
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run smoke:deployment
+        env:
+          SMOKE_BASE_URL: ${{ inputs.preview_url }}
+          SMOKE_REPORT_PATH: test-results/deployment-smoke.json
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: deployment-smoke
+          path: test-results/deployment-smoke.json
+          if-no-files-found: ignore
+          retention-days: 14
+

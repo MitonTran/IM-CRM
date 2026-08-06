@@ -1,0 +1,2 @@
+-- Chỉ thêm dữ liệu giả, không thêm schema hoặc thông tin nhận dạng thật tại đây.
+-- Tài khoản kiểm thử được tạo cô lập trong pgTAP và rollback sau mỗi suite.

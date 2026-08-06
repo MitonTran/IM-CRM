@@ -1,0 +1,4 @@
+"use client";
+import { AlertTriangle, RotateCcw } from "lucide-react";
+export default function DocumentsError({ reset }: { error: Error & { digest?: string }; reset: () => void }) { return <div className="grid min-h-[60vh] place-items-center"><div className="max-w-md rounded-[24px] border border-[#eadbd5] bg-white p-8 text-center"><AlertTriangle className="mx-auto text-[#945444]" /><h1 className="mt-4 text-xl font-bold">Chưa tải được kho tài liệu</h1><p className="mt-2 text-sm text-[#718078]">Quyền truy cập và file không bị thay đổi.</p><button onClick={reset} className="focus-ring mt-5 inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#176a4f] px-4 text-sm font-bold text-white"><RotateCcw size={16} /> Thử lại</button></div></div>; }
+

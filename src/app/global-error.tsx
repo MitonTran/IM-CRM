@@ -1,0 +1,5 @@
+"use client";
+
+export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  return <html lang="vi"><body><main style={{ minHeight: "100vh", display: "grid", placeItems: "center", padding: "24px", background: "#f4f7f5", color: "#17251f", fontFamily: "Arial, sans-serif" }}><div style={{ width: "100%", maxWidth: "560px", border: "1px solid #dfe7e2", borderRadius: "24px", background: "white", padding: "32px", textAlign: "center", boxShadow: "0 12px 35px rgba(26,53,42,.07)" }}><p style={{ margin: 0, color: "#728179", fontSize: "12px", fontWeight: 700, textTransform: "uppercase", letterSpacing: ".14em" }}>IM CRM</p><h1 style={{ margin: "12px 0 0", fontSize: "28px" }}>Ứng dụng gặp sự cố tạm thời</h1><p style={{ margin: "12px 0 0", color: "#68766f", lineHeight: 1.6 }}>Dữ liệu của bạn chưa bị thay đổi. Hãy thử tải lại màn hình; nếu lỗi lặp lại, liên hệ quản trị viên.</p><button onClick={reset} style={{ marginTop: "24px", minHeight: "44px", border: 0, borderRadius: "12px", background: "#176a4f", padding: "0 20px", color: "white", fontWeight: 700, cursor: "pointer" }}>Thử lại</button></div></main></body></html>;
+}

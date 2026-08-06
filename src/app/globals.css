@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+:root {
+  --ink: #17251f;
+  --muted: #68766f;
+  --line: #dfe7e2;
+  --surface: #ffffff;
+  --canvas: #f4f7f5;
+  --brand: #166b4f;
+  --brand-strong: #0f523d;
+  --accent: #e4f1c6;
+  --warning: #d97706;
+}
+
+* { box-sizing: border-box; }
+
+html { background: var(--canvas); }
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 8% 5%, rgba(218, 236, 195, .55), transparent 24rem),
+    var(--canvas);
+  font-family: var(--font-sans), Arial, sans-serif;
+}
+
+button, input, select { font: inherit; }
+button, a { -webkit-tap-highlight-color: transparent; }
+
+::selection { background: #c7df9c; color: #173c2f; }
+
+.focus-ring:focus-visible {
+  outline: 3px solid rgba(22, 107, 79, .22);
+  outline-offset: 2px;
+}
+
+.card-shadow { box-shadow: 0 12px 35px rgba(26, 53, 42, .07); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .rise { animation: rise .45s ease both; }
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
