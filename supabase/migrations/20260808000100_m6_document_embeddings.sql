@@ -1,4 +1,4 @@
--- M6.3: Gemini embeddings + hybrid document retrieval, always constrained by existing document RLS.
+-- M6.3: OpenAI embeddings + hybrid document retrieval, always constrained by existing document RLS.
 
 create extension if not exists vector with schema extensions;
 
@@ -8,7 +8,7 @@ alter table public.document_chunks
   add column embedded_at timestamptz,
   add constraint document_chunks_embedding_state_check check (
     (embedding is null and embedding_model is null and embedded_at is null)
-    or (embedding is not null and embedding_model = 'gemini-embedding-001' and embedded_at is not null)
+    or (embedding is not null and embedding_model = 'text-embedding-3-small' and embedded_at is not null)
   );
 
 alter table public.document_versions
@@ -132,7 +132,7 @@ declare updated_count integer;
 declare remaining_count integer;
 begin
   if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then raise exception using errcode = '42501', message = 'document_embedding_worker_denied'; end if;
-  if model_name <> 'gemini-embedding-001' or jsonb_typeof(embeddings) <> 'array' then
+  if model_name <> 'text-embedding-3-small' or jsonb_typeof(embeddings) <> 'array' then
     raise exception using errcode = '22023', message = 'document_embedding_payload_invalid';
   end if;
   payload_count := jsonb_array_length(embeddings);
@@ -284,6 +284,6 @@ revoke all on function public.search_documents_hybrid(text, extensions.vector, i
 grant execute on function public.claim_next_document_embedding(), public.store_document_embedding_batch(uuid, text, jsonb), public.fail_document_embedding(uuid, text) to service_role;
 grant execute on function public.retry_document_embedding(uuid), public.search_documents_hybrid(text, extensions.vector, integer) to authenticated;
 
-comment on column public.document_chunks.embedding is 'Google gemini-embedding-001 vector 1536 chiều; chỉ service worker ghi.';
+comment on column public.document_chunks.embedding is 'OpenAI text-embedding-3-small vector 1536 chiều; chỉ service worker ghi.';
 comment on column public.document_versions.embedding_status is 'Queue embedding tách khỏi extraction; lexical search vẫn dùng được khi embedding pending/failed.';
 comment on function public.search_documents_hybrid(text, extensions.vector, integer) is 'Hybrid RRF lexical + semantic trên tập chunks đã qua RLS của phiên hiện tại.';
