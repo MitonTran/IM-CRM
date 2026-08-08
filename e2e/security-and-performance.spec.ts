@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 import { E2E_PASSWORD, E2E_USERS } from "./fixtures";
 
-const APP_URL = "http://127.0.0.1:3200";
+const APP_URL = "http://localhost:3200";
 const PERFORMANCE_BUDGET = {
   ttfbMs: 2_000,
   domContentLoadedMs: 3_500,
