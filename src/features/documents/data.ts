@@ -3,13 +3,13 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/lib/access";
 import type { DocumentQuery } from "./query";
-import type { DocumentListItem, DocumentScope, DocumentsWorkspace, DocumentVersion, ExtractionStatus } from "./types";
+import type { DocumentListItem, DocumentScope, DocumentsWorkspace, DocumentVersion, EmbeddingStatus, ExtractionStatus } from "./types";
 
 type RawDocument = {
   id: string; title: string; scope_type: DocumentScope; team_id: string | null; user_id: string | null;
   status: "active" | "archived"; updated_at: string; document_folders: { name: string } | null;
   teams: { name: string } | null; profiles: { full_name: string } | null;
-  document_versions: null | { id: string; version_no: number; original_file_name: string; mime_type: string; size_bytes: number; extraction_status: ExtractionStatus };
+  document_versions: null | { id: string; version_no: number; original_file_name: string; mime_type: string; size_bytes: number; extraction_status: ExtractionStatus; embedding_status: EmbeddingStatus };
 };
 
 function canManage(role: AppRole, viewerTeam: string | null, row: Pick<RawDocument, "scope_type" | "team_id">) {
@@ -23,7 +23,7 @@ function mapDocument(row: RawDocument, role: AppRole, teamId: string | null): Do
     scopeName: row.scope_type === "organization" ? "Toàn công ty" : row.scope_type === "team" ? row.teams?.name ?? "Team" : row.profiles?.full_name ?? "Cá nhân",
     folderName: row.document_folders?.name ?? null, status: row.status, updatedAt: row.updated_at,
     canManage: canManage(role, teamId, row),
-    currentVersion: version ? { id: version.id, versionNo: version.version_no, fileName: version.original_file_name, mimeType: version.mime_type, sizeBytes: Number(version.size_bytes), extractionStatus: version.extraction_status } : null,
+    currentVersion: version ? { id: version.id, versionNo: version.version_no, fileName: version.original_file_name, mimeType: version.mime_type, sizeBytes: Number(version.size_bytes), extractionStatus: version.extraction_status, embeddingStatus: version.embedding_status } : null,
   };
 }
 
@@ -41,7 +41,7 @@ export async function getDocumentsWorkspace(query: DocumentQuery): Promise<Docum
     searchIds = (data ?? []).map((item: { document_id: string }) => item.document_id);
   }
   const versionRelation = query.extraction ? "document_versions!documents_current_version_fk!inner" : "document_versions!documents_current_version_fk";
-  const select = `id, title, scope_type, team_id, user_id, status, updated_at, document_folders(name), teams(name), profiles!documents_user_id_fkey(full_name), ${versionRelation}(id, version_no, original_file_name, mime_type, size_bytes, extraction_status)`;
+  const select = `id, title, scope_type, team_id, user_id, status, updated_at, document_folders(name), teams(name), profiles!documents_user_id_fkey(full_name), ${versionRelation}(id, version_no, original_file_name, mime_type, size_bytes, extraction_status, embedding_status)`;
   let request = supabase.from("documents").select(select).order("updated_at", { ascending: false }).limit(100);
   if (searchIds) request = searchIds.length ? request.in("id", searchIds) : request.eq("id", "00000000-0000-0000-0000-000000000000");
   if (query.scope) request = request.eq("scope_type", query.scope);
@@ -58,9 +58,9 @@ export async function getDocumentsWorkspace(query: DocumentQuery): Promise<Docum
   const selected = query.document ? documents.find((item) => item.id === query.document) ?? null : null;
   let versions: DocumentVersion[] = [];
   if (selected) {
-    const { data, error } = await supabase.from("document_versions").select("id, version_no, original_file_name, mime_type, size_bytes, extraction_status, extraction_error, created_at, profiles!document_versions_uploaded_by_fkey(full_name)").eq("document_id", selected.id).order("version_no", { ascending: false });
+    const { data, error } = await supabase.from("document_versions").select("id, version_no, original_file_name, mime_type, size_bytes, extraction_status, extraction_error, embedding_status, embedding_error, created_at, profiles!document_versions_uploaded_by_fkey(full_name)").eq("document_id", selected.id).order("version_no", { ascending: false });
     if (error) throw new Error(`Không tải được phiên bản: ${error.message}`);
-    versions = (data ?? []).map((item) => { const uploader = item.profiles as unknown as { full_name?: string } | null; return { id: item.id, versionNo: item.version_no, fileName: item.original_file_name, mimeType: item.mime_type, sizeBytes: Number(item.size_bytes), extractionStatus: item.extraction_status as ExtractionStatus, extractionError: item.extraction_error, createdAt: item.created_at, uploaderName: uploader?.full_name ?? "Thành viên" }; });
+    versions = (data ?? []).map((item) => { const uploader = item.profiles as unknown as { full_name?: string } | null; return { id: item.id, versionNo: item.version_no, fileName: item.original_file_name, mimeType: item.mime_type, sizeBytes: Number(item.size_bytes), extractionStatus: item.extraction_status as ExtractionStatus, extractionError: item.extraction_error, embeddingStatus: item.embedding_status as EmbeddingStatus, embeddingError: item.embedding_error, createdAt: item.created_at, uploaderName: uploader?.full_name ?? "Thành viên" }; });
   }
   return {
     viewer: { id: userId, role, teamId: profile.team_id }, documents, selected, versions,

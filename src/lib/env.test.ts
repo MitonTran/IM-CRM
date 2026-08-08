@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { getAiProviderConfig, getSupabasePublicEnv, hasAiProviderEnv, hasSupabaseEnv } from "./env";
+import { getAiProviderConfig, getOpenAiEmbeddingConfig, getSupabasePublicEnv, hasAiProviderEnv, hasOpenAiEmbeddingEnv, hasSupabaseEnv } from "./env";
 
 const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const previousKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -11,6 +11,7 @@ const previousOpenRouterKey = process.env.OPENROUTER_API_KEY;
 const previousGeminiKey = process.env.GEMINI_API_KEY;
 const previousDeepSeekKey = process.env.DEEPSEEK_API_KEY;
 const previousNvidiaKey = process.env.NVIDIA_NIM_API_KEY;
+const previousEmbeddingModel = process.env.OPENAI_EMBEDDING_MODEL;
 
 afterEach(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
@@ -23,6 +24,7 @@ afterEach(() => {
   process.env.GEMINI_API_KEY = previousGeminiKey;
   process.env.DEEPSEEK_API_KEY = previousDeepSeekKey;
   process.env.NVIDIA_NIM_API_KEY = previousNvidiaKey;
+  process.env.OPENAI_EMBEDDING_MODEL = previousEmbeddingModel;
 });
 
 describe("AI provider environment", () => {
@@ -86,5 +88,21 @@ describe("Supabase environment", () => {
       url: "https://example.supabase.co",
       publishableKey: "sb_publishable_test",
     });
+  });
+});
+
+describe("OpenAI document embedding environment", () => {
+  it("requires a real server-only OpenAI key", () => {
+    process.env.OPENAI_API_KEY = "replace_in_server_environment_only";
+    expect(hasOpenAiEmbeddingEnv()).toBe(false);
+    expect(() => getOpenAiEmbeddingConfig()).toThrow(/OPENAI_API_KEY/);
+  });
+
+  it("pins the model and dimensions to the database schema", () => {
+    process.env.OPENAI_API_KEY = "sk-test-only";
+    delete process.env.OPENAI_EMBEDDING_MODEL;
+    expect(getOpenAiEmbeddingConfig()).toEqual({ apiKey: "sk-test-only", model: "text-embedding-3-small", dimensions: 1536 });
+    process.env.OPENAI_EMBEDDING_MODEL = "text-embedding-3-large";
+    expect(() => getOpenAiEmbeddingConfig()).toThrow(/khớp schema vector/);
   });
 });

@@ -79,3 +79,20 @@ export function getAiProviderConfig() {
     baseURL: providerConfig.baseURL,
   };
 }
+
+export const OPENAI_EMBEDDING_MODEL = "text-embedding-3-small";
+export const OPENAI_EMBEDDING_DIMENSIONS = 1536;
+
+export function hasOpenAiEmbeddingEnv() {
+  return isUsable(process.env.OPENAI_API_KEY);
+}
+
+export function getOpenAiEmbeddingConfig() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!isUsable(apiKey)) throw new Error("Thiếu OPENAI_API_KEY phía máy chủ cho document embedding.");
+  const model = process.env.OPENAI_EMBEDDING_MODEL?.trim() || OPENAI_EMBEDDING_MODEL;
+  if (model !== OPENAI_EMBEDDING_MODEL) {
+    throw new Error(`OPENAI_EMBEDDING_MODEL phải là ${OPENAI_EMBEDDING_MODEL} để khớp schema vector.`);
+  }
+  return { apiKey: apiKey!, model, dimensions: OPENAI_EMBEDDING_DIMENSIONS };
+}

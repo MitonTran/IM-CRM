@@ -39,8 +39,8 @@ profiles 1--* audit_logs
 | `kpi_targets` | mục tiêu | `id`, `metric_code`, `scope_type`, `user_id`, `team_id`, `period_type`, `period_start/end`, `target_value numeric`, audit | unique metric/scope/period; idx period | Sale đọc own; Leader team; Admin all; Leader/Admin ghi |
 | `document_folders` | cây thư mục | `id`, `parent_id`, `name`, `scope_type`, `team_id`, `user_id`, audit + soft delete | unique parent/name/scope; idx parent | theo scope tài liệu |
 | `documents` | metadata logic | `id`, `folder_id`, `title`, `scope_type`, `team_id`, `user_id`, `current_version_id`, `status`, audit + soft delete | idx folder, scope/team/user, search title | org/team/user; ghi theo ma trận |
-| `document_versions` | phiên bản file | `id`, `document_id`, `version_no`, `storage_path`, `mime_type`, `size_bytes`, `checksum`, `extraction_status`, `extracted_text_path`, audit | unique doc/version; unique storage path; idx status | kế thừa document |
-| `document_chunks` | đoạn cho RAG | `id`, `document_version_id`, `chunk_index`, `content`, `embedding vector`, `token_count`, `metadata jsonb` | unique version/index; vector index khi đủ dữ liệu | kế thừa document qua version; không client ghi |
+| `document_versions` | phiên bản file | `id`, `document_id`, `version_no`, `storage_path`, `mime_type`, `size_bytes`, `checksum`, `extraction_status`, `embedding_status`, `extracted_text_path`, audit | unique doc/version; unique storage path; idx extraction/embedding queue | kế thừa document |
+| `document_chunks` | đoạn cho RAG | `id`, `document_version_id`, `chunk_index`, `content`, `embedding vector(1536)`, `embedding_model`, `embedded_at`, `token_count`, `metadata jsonb` | unique version/index; HNSW cosine partial index | kế thừa document qua version; không client ghi |
 | `ai_customer_analyses` | lịch sử phân tích | `id`, `customer_id`, `requested_by`, `input_snapshot jsonb`, `result jsonb`, `model`, `tokens`, `cost_estimate`, `created_at` | idx customer/date, requester/date | quyền customer; không update |
 | `ai_conversations` | phiên hỏi đáp | `id`, `user_id`, `title`, timestamps | idx user/updated | owner; Admin chỉ metadata khi cần audit |
 | `ai_messages` | câu hỏi/trả lời/tool | `id`, `conversation_id`, `role`, `content`, `citations jsonb`, `tool_calls jsonb`, `tokens`, `cost_estimate`, `created_at` | idx conversation/date | kế thừa conversation; server ghi assistant/tool |
@@ -61,4 +61,3 @@ profiles 1--* audit_logs
 - `register_deal(...)`
 - `void_deal(deal_id, reason)`
 - `get_kpi_summary(filters)` và các function AI chỉ đọc ở tài liệu AI.
-

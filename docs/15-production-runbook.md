@@ -29,7 +29,8 @@ Tên và kênh liên lạc cụ thể phải được điền vào phiếu phát
 4. Cấu hình Vercel Preview bằng secret riêng:
    - `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_APP_URL`;
    - `SUPABASE_SERVICE_ROLE_KEY`, `CRON_SECRET`;
-   - `AI_PROVIDER`, `AI_MODEL` và đúng một API key server-only được duyệt.
+   - `AI_PROVIDER`, `AI_MODEL` và đúng một API key server-only được duyệt;
+   - `OPENAI_API_KEY` + `OPENAI_EMBEDDING_MODEL=text-embedding-3-small` cho semantic document search.
 5. Cấu hình Supabase Auth Site URL/redirect URL đúng domain Preview. Không bật public signup.
 6. Deploy Vercel Preview từ pull request. Chạy GitHub Actions workflow `Preview smoke` với Preview origin để kiểm tra `/api/health`, nội dung login, CSP/security headers và response budget; sau đó thực hiện smoke/UAT có đăng nhập trong `docs/16-uat-checklist.md`.
 7. Chạy Lighthouse/Speed Insights trên Preview cho `/login`, `/dashboard`, `/customers`; ghi kết quả và mọi ngoại lệ vào phiếu phát hành.

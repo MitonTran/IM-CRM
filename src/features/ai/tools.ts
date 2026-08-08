@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hasOpenAiEmbeddingEnv } from "@/lib/env";
 import type { AiPeriod, AiToolCall, AiToolEvidence, AiToolResult } from "./assistant-schema";
+import { toPgVector } from "./embedding-contract";
+import { createOpenAiEmbeddings } from "./openai-embeddings";
 import { aiPeriodBounds, vietnamDateKey } from "./period";
 
 type ScopedClient = SupabaseClient;
@@ -107,7 +110,21 @@ function documentResult(tool: "search_documents" | "get_document_excerpt", rows:
 }
 
 async function searchDocuments(supabase: ScopedClient, query: string) {
-  const result = await supabase.rpc("search_documents", { search_text: query, max_results: 6 });
+  let result;
+  if (hasOpenAiEmbeddingEnv()) {
+    try {
+      const [embedding] = await createOpenAiEmbeddings([query]);
+      result = await supabase.rpc("search_documents_hybrid", {
+        search_text: query,
+        query_embedding: toPgVector(embedding),
+        max_results: 6,
+      });
+    } catch {
+      result = await supabase.rpc("search_documents", { search_text: query, max_results: 6 });
+    }
+  } else {
+    result = await supabase.rpc("search_documents", { search_text: query, max_results: 6 });
+  }
   if (result.error) throw new Error(`ai_tool_document_search:${result.error.message}`);
   return documentResult("search_documents", (result.data ?? []) as DocumentChunk[]);
 }
