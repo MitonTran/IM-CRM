@@ -19,5 +19,6 @@ export async function GET(request: Request) {
     embeddingReady: embeddingResults.filter((item) => item.status === "ready").length,
     embeddingPending: embeddingResults.filter((item) => item.status === "pending").length,
     embeddingFailed: embeddingResults.filter((item) => item.status === "failed").length,
+    embeddingFailureCodes: embeddingResults.flatMap((item) => item.failureCode ? [item.failureCode] : []),
   });
 }

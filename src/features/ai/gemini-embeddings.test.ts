@@ -41,6 +41,18 @@ describe("Gemini embeddings client", () => {
   it("fails closed without returning provider error bodies", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("provider detail", { status: 429 })));
     await expect(createGeminiEmbeddings(["Câu hỏi giả"], "RETRIEVAL_QUERY"))
-      .rejects.toThrow("gemini_embedding_request_failed");
+      .rejects.toMatchObject({ message: "gemini_embedding_quota_exceeded", code: "quota_exceeded" });
+  });
+
+  it.each([
+    [400, "invalid_request"],
+    [401, "unauthorized"],
+    [403, "unauthorized"],
+    [500, "provider_unavailable"],
+    [418, "request_failed"],
+  ])("maps HTTP %s to the safe failure code %s", async (status, code) => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("provider detail", { status })));
+    await expect(createGeminiEmbeddings(["Câu hỏi giả"], "RETRIEVAL_QUERY"))
+      .rejects.toMatchObject({ code });
   });
 });
