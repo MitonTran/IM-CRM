@@ -77,6 +77,7 @@ Không tiếp tục nếu thiếu bất kỳ mục nào:
 - Supabase paid plan có daily backup theo thời gian lưu của plan; PITR là add-on. Free tier cần logical export định kỳ và lưu off-site được mã hóa.
 - Database backup chỉ khôi phục metadata Storage, không khôi phục file object đã mất; phải có kế hoạch Storage riêng.
 - Mỗi quý, restore backup vào project cô lập/disposable, chạy migration check, đếm bản ghi, kiểm tra Auth/RLS/Storage và ghi thời gian thực tế. Không diễn tập bằng cách ghi đè Production.
+- Bài drill tự động `npm run db:restore-drill` chỉ chạy trên Supabase local project `im_crm`: thêm một fixture giả có tên ngẫu nhiên, tạo logical backup, restore vào database disposable có guardrail, so khớp fixture/migration/số bản ghi/RLS rồi xóa database và fixture tạm. CI lưu report JSON 14 ngày. Đây là bằng chứng kỹ thuật cho quy trình logical restore, không thay thế drill từ backup hosted, kiểm tra object Storage, hay quyết định RTO/RPO + Supabase plan.
 
 ## 8. Phân loại sự cố
 

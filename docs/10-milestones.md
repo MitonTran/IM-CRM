@@ -42,7 +42,7 @@ M6.3 hiện có bản local gồm hội thoại owner-only, 7 tool đọc allowl
 
 M7.1 hardening local đã có CSP nonce theo request, security headers, liveness endpoint, global error/404, Vercel cron cho retention AI, Playwright E2E cho đăng nhập/phạm vi Sale–Leader–Admin và performance budget production-like trong CI. Lighthouse/Core Web Vitals trên Preview và UAT có người dùng ký duyệt vẫn là điều kiện chưa hoàn tất.
 
-M7.2 đã có bản nháp runbook Preview→Production, rollback/incident/backup, checklist UAT năm vai trò và GitHub workflow smoke test deployment chỉ đọc. Chưa đánh dấu hoàn tất cho đến khi chốt RTO/RPO + Supabase plan, diễn tập restore và ký UAT trên Preview.
+M7.2 đã có bản nháp runbook Preview→Production, rollback/incident/backup, checklist UAT năm vai trò, GitHub workflow smoke test deployment chỉ đọc và restore drill tự động trên database local/disposable. Chưa đánh dấu hoàn tất cho đến khi chốt RTO/RPO + Supabase plan, diễn tập restore từ backup hosted kèm Storage và ký UAT trên Preview.
 
 Schema/RLS phải đi trước UI ghi dữ liệu. AI RAG bắt buộc sau ACL tài liệu; KPI sau khi activity/deal ổn định.
 

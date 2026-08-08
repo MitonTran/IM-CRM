@@ -29,6 +29,14 @@ jobs:
           version: latest
       - run: supabase start
       - run: supabase test db
+      - run: RESTORE_DRILL_REPORT_PATH=test-results/restore-drill.json node scripts/restore-drill.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: restore-drill-report
+          path: test-results/restore-drill.json
+          if-no-files-found: ignore
+          retention-days: 14
 
   e2e:
     runs-on: ubuntu-latest
