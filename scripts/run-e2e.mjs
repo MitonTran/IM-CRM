@@ -47,7 +47,7 @@ function run(command, args, env) {
 const testEnv = {
   ...process.env,
   ...localSupabaseEnv(),
-  NEXT_PUBLIC_APP_URL: "http://127.0.0.1:3200",
+  NEXT_PUBLIC_APP_URL: "http://localhost:3200",
   CRON_SECRET: "e2e-local-cron-secret-only",
   E2E_LOCAL_ONLY: "true",
 };
