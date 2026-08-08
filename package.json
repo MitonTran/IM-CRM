@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "test:e2e": "node scripts/run-e2e.mjs",
     "smoke:deployment": "node scripts/smoke-deployment.mjs",
+    "audit:preview-performance": "node scripts/audit-preview-performance.mjs",
     "db:start": "supabase start",
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",

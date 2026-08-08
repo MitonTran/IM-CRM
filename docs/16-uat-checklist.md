@@ -60,6 +60,7 @@ Chỉ thực hiện trên Vercel Preview + Supabase Preview bằng dữ liệu g
 ## Performance và quan sát
 
 - [ ] Playwright performance budget trong CI đạt.
+- [ ] Workflow `Preview smoke` đạt và artifact `preview-performance.json` cho `/login`, `/dashboard`, `/customers` đã được lưu.
 - [ ] Lighthouse/Speed Insights Preview cho `/login`, `/dashboard`, `/customers` đã lưu kết quả; không có hồi quy nghiêm trọng.
 - [ ] Log Vercel/Supabase không có lỗi nghiêm trọng, PII hoặc secret.
 - [ ] Upload 25 MB bị giới hạn đúng; request AI/file không treo vô hạn.
@@ -74,4 +75,3 @@ Chỉ thực hiện trên Vercel Preview + Supabase Preview bằng dữ liệu g
 | Release owner |  |  |  |  |
 
 Chỉ khi cả bốn hàng được ký `Pass` và không còn P0/P1 mới được chuyển sang cổng Production trong `docs/15-production-runbook.md`.
-
