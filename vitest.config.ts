@@ -7,6 +7,9 @@ export default defineConfig({
     include: ["src/**/*.test.ts", "scripts/**/*.test.mjs"],
   },
   resolve: {
-    alias: [{ find: /^@\//, replacement: fileURLToPath(new URL("./src/", import.meta.url)) }],
+    alias: [
+      { find: /^@\//, replacement: fileURLToPath(new URL("./src/", import.meta.url)) },
+      { find: "server-only", replacement: fileURLToPath(new URL("./src/test/server-only.ts", import.meta.url)) },
+    ],
   },
 });

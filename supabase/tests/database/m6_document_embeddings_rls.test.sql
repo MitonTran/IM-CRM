@@ -46,17 +46,17 @@ insert into public.document_versions(id,document_id,version_no,original_file_nam
 update public.documents d set current_version_id=v.id from public.document_versions v where v.document_id=d.id;
 
 insert into public.document_chunks(id,document_version_id,chunk_index,content,token_count,metadata,embedding,embedding_model,embedded_at) values
-('e4000000-0000-4000-8000-000000000001','e3000000-0000-4000-8000-000000000001',0,'alpha nội dung tổ chức',5,'{"page":1}',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),'text-embedding-3-small',now()),
-('e4000000-0000-4000-8000-000000000002','e3000000-0000-4000-8000-000000000002',0,'alpha nội dung Team A',5,'{"page":2}',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),'text-embedding-3-small',now()),
-('e4000000-0000-4000-8000-000000000003','e3000000-0000-4000-8000-000000000003',0,'alpha nội dung Team B',5,'{"page":3}',(array[0::real,1::real] || array_fill(0::real,array[1534]))::extensions.vector(1536),'text-embedding-3-small',now()),
-('e4000000-0000-4000-8000-000000000004','e3000000-0000-4000-8000-000000000004',0,'alpha nội dung cá nhân',5,'{"page":4}',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),'text-embedding-3-small',now()),
+('e4000000-0000-4000-8000-000000000001','e3000000-0000-4000-8000-000000000001',0,'alpha nội dung tổ chức',5,'{"page":1}',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),'gemini-embedding-001',now()),
+('e4000000-0000-4000-8000-000000000002','e3000000-0000-4000-8000-000000000002',0,'alpha nội dung Team A',5,'{"page":2}',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),'gemini-embedding-001',now()),
+('e4000000-0000-4000-8000-000000000003','e3000000-0000-4000-8000-000000000003',0,'alpha nội dung Team B',5,'{"page":3}',(array[0::real,1::real] || array_fill(0::real,array[1534]))::extensions.vector(1536),'gemini-embedding-001',now()),
+('e4000000-0000-4000-8000-000000000004','e3000000-0000-4000-8000-000000000004',0,'alpha nội dung cá nhân',5,'{"page":4}',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),'gemini-embedding-001',now()),
 ('e4000000-0000-4000-8000-000000000005','e3000000-0000-4000-8000-000000000005',0,'chunk pending thứ nhất',5,'{"page":5}',null,null,null),
 ('e4000000-0000-4000-8000-000000000006','e3000000-0000-4000-8000-000000000005',1,'chunk pending thứ hai',5,'{"page":6}',null,null,null);
 
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"e0000000-0000-4000-8000-000000000004","role":"authenticated"}',true);
 select throws_ok($$select public.claim_next_document_embedding()$$,'42501','permission denied for function claim_next_document_embedding','Sale cannot claim embedding work');
-select throws_ok($$select public.store_document_embedding_batch('e3000000-0000-4000-8000-000000000005','text-embedding-3-small','[]')$$,'42501','permission denied for function store_document_embedding_batch','Sale cannot store embedding vectors');
+select throws_ok($$select public.store_document_embedding_batch('e3000000-0000-4000-8000-000000000005','gemini-embedding-001','[]')$$,'42501','permission denied for function store_document_embedding_batch','Sale cannot store embedding vectors');
 select throws_ok($$select public.fail_document_embedding('e3000000-0000-4000-8000-000000000005','Lỗi giả')$$,'42501','permission denied for function fail_document_embedding','Sale cannot change embedding status');
 select results_eq($$select count(*)::bigint from public.search_documents_hybrid('khái niệm không có từ khóa',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),10)$$,array[3::bigint],'Sale A hybrid retrieval sees organization, Team A and personal only');
 select results_eq($$select count(*)::bigint from public.search_documents_hybrid('khái niệm không có từ khóa',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),10) where document_id='e2000000-0000-4000-8000-000000000003'$$,array[0::bigint],'Sale A hybrid retrieval never returns Team B');
@@ -76,7 +76,7 @@ set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select results_eq($$select version_id from public.claim_next_document_embedding()$$,array['e3000000-0000-4000-8000-000000000005'::uuid],'Service worker claims the pending version');
 select results_eq($$select public.store_document_embedding_batch(
-  'e3000000-0000-4000-8000-000000000005','text-embedding-3-small',
+  'e3000000-0000-4000-8000-000000000005','gemini-embedding-001',
   jsonb_build_array(jsonb_build_object('chunk_id','e4000000-0000-4000-8000-000000000005','embedding',to_jsonb(array[1::real] || array_fill(0::real,array[1535]))))
 )$$,array[1],'First embedding batch leaves one chunk pending');
 reset role;
@@ -85,16 +85,16 @@ set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select results_eq($$select version_id from public.claim_next_document_embedding()$$,array['e3000000-0000-4000-8000-000000000005'::uuid],'Worker resumes the same version');
 select throws_ok($$select public.store_document_embedding_batch(
-  'e3000000-0000-4000-8000-000000000005','text-embedding-3-small',
+  'e3000000-0000-4000-8000-000000000005','gemini-embedding-001',
   '[{"chunk_id":"e4000000-0000-4000-8000-000000000006","embedding":[1,0]}]'
 )$$,'22023','document_embedding_vector_invalid','Worker rejects the wrong vector dimension');
 select results_eq($$select public.store_document_embedding_batch(
-  'e3000000-0000-4000-8000-000000000005','text-embedding-3-small',
+  'e3000000-0000-4000-8000-000000000005','gemini-embedding-001',
   jsonb_build_array(jsonb_build_object('chunk_id','e4000000-0000-4000-8000-000000000006','embedding',to_jsonb(array[0::real,1::real] || array_fill(0::real,array[1534]))))
 )$$,array[0],'Final embedding batch completes the version');
 reset role;
 select results_eq($$select embedding_status from public.document_versions where id='e3000000-0000-4000-8000-000000000005'$$,array['ready'::text],'Fully embedded version becomes ready');
-select results_eq($$select count(*)::bigint from public.document_chunks where document_version_id='e3000000-0000-4000-8000-000000000005' and embedding_model='text-embedding-3-small'$$,array[2::bigint],'Every pending chunk records the fixed model');
+select results_eq($$select count(*)::bigint from public.document_chunks where document_version_id='e3000000-0000-4000-8000-000000000005' and embedding_model='gemini-embedding-001'$$,array[2::bigint],'Every pending chunk records the fixed model');
 
 update public.document_chunks set embedding=null,embedding_model=null,embedded_at=null where id='e4000000-0000-4000-8000-000000000002';
 update public.document_versions set embedding_status='failed',embedding_error='Lỗi embedding giả' where id='e3000000-0000-4000-8000-000000000002';

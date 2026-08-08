@@ -1,8 +1,8 @@
 import "server-only";
 
 import { EMBEDDING_BATCH_SIZE } from "@/features/ai/embedding-contract";
-import { createOpenAiEmbeddings } from "@/features/ai/openai-embeddings";
-import { OPENAI_EMBEDDING_MODEL, hasOpenAiEmbeddingEnv } from "@/lib/env";
+import { createGeminiEmbeddings } from "@/features/ai/gemini-embeddings";
+import { GEMINI_EMBEDDING_MODEL, hasGeminiEmbeddingEnv } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 type ClaimedEmbedding = { version_id: string };
@@ -36,10 +36,10 @@ async function processClaimedEmbedding(row: ClaimedEmbedding): Promise<Embedding
     if (chunksQuery.error) throw new Error("document_embedding_chunks_unavailable");
     const chunks = (chunksQuery.data ?? []) as ChunkForEmbedding[];
     if (!chunks.length) throw new Error("document_embedding_chunks_empty");
-    const vectors = await createOpenAiEmbeddings(chunks.map((chunk) => chunk.content));
+    const vectors = await createGeminiEmbeddings(chunks.map((chunk) => chunk.content), "RETRIEVAL_DOCUMENT");
     const stored = await admin.rpc("store_document_embedding_batch", {
       target_version_id: row.version_id,
-      model_name: OPENAI_EMBEDDING_MODEL,
+      model_name: GEMINI_EMBEDDING_MODEL,
       embeddings: chunks.map((chunk, index) => ({ chunk_id: chunk.id, embedding: vectors[index] })),
     });
     if (stored.error || typeof stored.data !== "number") throw new Error("document_embedding_commit_failed");
@@ -51,7 +51,7 @@ async function processClaimedEmbedding(row: ClaimedEmbedding): Promise<Embedding
 }
 
 export async function processPendingDocumentEmbeddings(limit = 2): Promise<EmbeddingResult[]> {
-  if (!hasOpenAiEmbeddingEnv()) return [];
+  if (!hasGeminiEmbeddingEnv()) return [];
   const bounded = Math.max(1, Math.min(5, Math.trunc(limit)));
   const results: EmbeddingResult[] = [];
   for (let index = 0; index < bounded; index += 1) {

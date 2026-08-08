@@ -1,10 +1,10 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { hasOpenAiEmbeddingEnv } from "@/lib/env";
+import { hasGeminiEmbeddingEnv } from "@/lib/env";
 import type { AiPeriod, AiToolCall, AiToolEvidence, AiToolResult } from "./assistant-schema";
 import { toPgVector } from "./embedding-contract";
-import { createOpenAiEmbeddings } from "./openai-embeddings";
+import { createGeminiEmbeddings } from "./gemini-embeddings";
 import { aiPeriodBounds, vietnamDateKey } from "./period";
 
 type ScopedClient = SupabaseClient;
@@ -111,9 +111,9 @@ function documentResult(tool: "search_documents" | "get_document_excerpt", rows:
 
 async function searchDocuments(supabase: ScopedClient, query: string) {
   let result;
-  if (hasOpenAiEmbeddingEnv()) {
+  if (hasGeminiEmbeddingEnv()) {
     try {
-      const [embedding] = await createOpenAiEmbeddings([query]);
+      const [embedding] = await createGeminiEmbeddings([query], "RETRIEVAL_QUERY");
       result = await supabase.rpc("search_documents_hybrid", {
         search_text: query,
         query_embedding: toPgVector(embedding),

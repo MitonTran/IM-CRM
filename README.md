@@ -12,7 +12,7 @@ MVP đã hoàn thiện ở môi trường local với migration, RLS, kiểm th�
 - Supabase Auth, PostgreSQL, RLS và Storage.
 - Vercel cho Preview/Production và cron được bảo vệ bằng secret.
 - Vitest, pgTAP và Playwright cho kiểm thử.
-- AI gateway phía server hỗ trợ OpenAI, OpenRouter, Gemini, DeepSeek và NVIDIA NIM.
+- AI gateway phía server hỗ trợ OpenAI, OpenRouter, Gemini, DeepSeek, Groq và NVIDIA NIM.
 
 ## Chạy local
 

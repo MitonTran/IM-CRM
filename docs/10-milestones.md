@@ -38,7 +38,7 @@
 | 7.1 | E2E/UAT/security/performance | 2–6 | docs/training |
 | 7.2 | Runbook, Preview→Production | 7.1 | không |
 
-M6.3 hiện có bản local gồm hội thoại owner-only, 7 tool đọc allowlist, hybrid RAG có ACL/citation và lexical fallback, quota dùng chung và audit metadata. Harness eval provider thật bằng dữ liệu giả đã có nhưng vẫn cần một lượt chạy được lưu bằng chứng. Migration pgvector, embedding queue và hybrid ranking vẫn phải qua database/RLS test + Preview có `OPENAI_API_KEY`; Preview smoke test có đăng nhập vẫn là điều kiện trước khi đánh dấu M6 hoàn tất.
+M6.3 hiện có bản local gồm hội thoại owner-only, 7 tool đọc allowlist, hybrid RAG có ACL/citation và lexical fallback, quota dùng chung và audit metadata. Groq `openai/gpt-oss-20b` đã pass `3/3` hợp đồng live eval bằng dữ liệu giả ngày 2026-08-08; bằng chứng đã khử secret nằm tại `docs/17-ai-provider-eval-evidence.md`. Migration pgvector, Gemini embedding queue và hybrid ranking vẫn phải qua database/RLS test + Preview có `GEMINI_API_KEY`; Preview smoke test có đăng nhập vẫn là điều kiện trước khi đánh dấu M6 hoàn tất.
 
 M7.1 hardening local đã có CSP nonce theo request, security headers, liveness endpoint, global error/404, Vercel cron cho retention AI, Playwright E2E cho đăng nhập/phạm vi Sale–Leader–Admin và performance budget production-like trong CI. Lighthouse/Core Web Vitals trên Preview và UAT có người dùng ký duyệt vẫn là điều kiện chưa hoàn tất.
 

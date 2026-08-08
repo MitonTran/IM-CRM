@@ -15,11 +15,11 @@
 
 ## Cấu hình AI từ M6
 
-- Chọn `AI_PROVIDER` trong allowlist `openai`, `openrouter`, `gemini`, `deepseek`, `nvidia`; đặt `AI_MODEL` và đúng một key tương ứng trong `.env.local`/Vercel Environment Variables. Không dùng tiền tố `NEXT_PUBLIC_` và không commit giá trị thật.
+- Chọn `AI_PROVIDER` trong allowlist `openai`, `openrouter`, `gemini`, `deepseek`, `groq`, `nvidia`; đặt `AI_MODEL` và đúng một key tương ứng trong `.env.local`/Vercel Environment Variables. Không dùng tiền tố `NEXT_PUBLIC_` và không commit giá trị thật.
 - Endpoint được cố định trong backend, không nhận URL tùy ý từ frontend. Nếu provider/key sai hoặc thiếu, nút phân tích trả thông báo cấu hình và không tạo request/quota dang dở.
 - Gateway vẫn kiểm tra mọi kết quả bằng cùng schema Zod và evidence trong snapshot trước khi lưu. OpenAI dùng Responses API với `store: false`; các provider tương thích dùng Chat Completions.
 - Trang `/ai` dùng hai lượt gọi có cấu trúc: lập kế hoạch tool rồi soạn câu trả lời từ kết quả đã qua RLS. Cần cấu hình `SUPABASE_SERVICE_ROLE_KEY` ở server để chỉ ghi completion/failure; key này không được dùng cho retrieval và không được lộ ra client.
-- Semantic document search luôn dùng `OPENAI_API_KEY` server-only và model cố định `OPENAI_EMBEDDING_MODEL=text-embedding-3-small` để khớp cột `vector(1536)`. Nếu thiếu key hoặc embedding query lỗi, retrieval fallback full-text dưới cùng RLS.
+- Semantic document search dùng `GEMINI_API_KEY` server-only và model cố định `GEMINI_EMBEDDING_MODEL=gemini-embedding-001` với output 1536 chiều để khớp cột `vector(1536)`. Document dùng task `RETRIEVAL_DOCUMENT`, câu hỏi dùng `RETRIEVAL_QUERY`; nếu thiếu key hoặc embedding query lỗi, retrieval fallback full-text dưới cùng RLS.
 - Để chạy retention 90 ngày, gọi `purge_expired_ai_history()` từ job server tin cậy bằng `service_role`; không cấp RPC này cho user thường.
 - `vercel.json` gọi extraction lúc `18:00 UTC` và retention AI lúc `18:30 UTC` mỗi ngày. Cả hai route yêu cầu đúng `Authorization: Bearer <CRON_SECRET>`; response lỗi không trả chi tiết database.
 - Cron extraction cũng xử lý tối đa hai batch embedding mỗi lượt, 64 chunks/batch. `embedding_status` cho biết queue đang chờ, chạy, hoàn tất hay lỗi; không đổi model/dimensions nếu chưa có migration mới.
@@ -31,7 +31,10 @@
 | `gemini` | `GEMINI_API_KEY` | `gemini-3.1-flash-lite` | Có free tier theo quota Google AI Studio. |
 | `nvidia` | `NVIDIA_NIM_API_KEY` | `nvidia/nemotron-3-nano-30b-a3b` | Free endpoint/trial cho phát triển, có thể bị rate limit. |
 | `deepseek` | `DEEPSEEK_API_KEY` | `deepseek-v4-flash` | Chi phí thấp nhưng API chính thức không mặc định miễn phí. |
+| `groq` | `GROQ_API_KEY` | `openai/gpt-oss-20b` | Có Free Plan theo rate limit; model mặc định hỗ trợ Structured Outputs strict. |
 | `openai` | `OPENAI_API_KEY` | `gpt-5.6-terra` | Giữ tích hợp Structured Outputs hiện tại. |
+
+Với `AI_PROVIDER=groq`, model ID `openai/gpt-oss-20b` chạy trên GroqCloud bằng `GROQ_API_KEY`; không dùng OpenAI API key hay OpenAI credit. Endpoint và model bám theo [Groq OpenAI compatibility](https://console.groq.com/docs/openai), [Structured Outputs](https://console.groq.com/docs/structured-outputs) và [Free Plan limits](https://console.groq.com/docs/rate-limits).
 
 Ví dụ khởi đầu với OpenRouter:
 
@@ -43,7 +46,7 @@ OPENROUTER_API_KEY=<đặt trong môi trường server>
 
 Free tier có điều khoản lưu trữ/sử dụng dữ liệu khác nhau và có thể thay đổi. Chỉ dùng dữ liệu giả trong dev/Preview; không gửi dữ liệu CRM thật cho free endpoint trước khi duyệt điều khoản riêng tư, vùng xử lý dữ liệu, retention và hợp đồng phù hợp.
 
-Hợp đồng embedding bám theo [OpenAI Embeddings guide](https://developers.openai.com/api/docs/guides/embeddings#how-to-get-embeddings): SDK gọi endpoint embeddings với `encoding_format: "float"`; `text-embedding-3-small` mặc định trả 1536 chiều.
+Hợp đồng embedding bám theo [Gemini Embeddings API](https://ai.google.dev/api/embeddings): backend gọi `batchEmbedContents`, cố định `gemini-embedding-001` và `outputDimensionality=1536`. Free Tier có thể dùng cho Preview với dữ liệu giả; điều khoản sử dụng dữ liệu phải được duyệt trước Production.
 
 ### Đánh giá provider bằng dữ liệu giả
 

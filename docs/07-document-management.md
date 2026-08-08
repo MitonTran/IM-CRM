@@ -30,7 +30,7 @@
 ## Metadata và tìm kiếm
 
 - Title, folder, version, MIME, size, checksum, uploader, scope, created/updated, extraction status.
-- Tìm theo title/metadata; full-text trên nội dung đã trích xuất; semantic dùng OpenAI `text-embedding-3-small` 1536 chiều khi embedding `ready`.
+- Tìm theo title/metadata; full-text trên nội dung đã trích xuất; semantic dùng Google `gemini-embedding-001` 1536 chiều khi embedding `ready`.
 - Kết quả tìm kiếm luôn lọc quyền trước xếp hạng; citation gồm document, version, page/slide/sheet/chunk.
 
 ## Cập nhật và xóa
