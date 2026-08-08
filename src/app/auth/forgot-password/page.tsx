@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 const errorMessages: Record<string, string> = {
   "invalid-email": "Vui lòng nhập email hợp lệ.",
   "not-configured": "Dự án chưa được kết nối Supabase.",
+  "request-failed": "Không thể gửi liên kết lúc này. Vui lòng thử lại sau.",
 };
 
 export default async function ForgotPasswordPage({ searchParams }: { searchParams: Promise<{ error?: string; status?: string }> }) {
