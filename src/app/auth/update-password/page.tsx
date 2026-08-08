@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Brand } from "@/components/brand";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { passwordUpdateErrorMessage } from "@/features/auth/password";
 import { createClient } from "@/lib/supabase/server";
 import { updatePassword } from "./actions";
 
@@ -13,7 +14,7 @@ export default async function UpdatePasswordPage({ searchParams }: { searchParam
   const { data } = await supabase.auth.getClaims();
   if (!data?.claims) redirect("/login?error=recovery-expired");
   const { error } = await searchParams;
-  const message = error === "update-failed" ? "Không thể cập nhật mật khẩu. Liên kết có thể đã hết hạn." : error;
+  const message = passwordUpdateErrorMessage(error);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#f5f7f4] px-5 py-10">

@@ -16,6 +16,23 @@ export const passwordUpdateSchema = z
     path: ["confirmPassword"],
   });
 
+const passwordUpdateErrorMessages: Record<string, string> = {
+  "invalid-password": `Mật khẩu cần ít nhất ${PASSWORD_MIN_LENGTH} ký tự.`,
+  "password-mismatch": "Mật khẩu xác nhận chưa khớp.",
+  "update-failed": "Không thể cập nhật mật khẩu. Liên kết có thể đã hết hạn.",
+};
+
+export function passwordUpdateErrorCode(error: z.ZodError) {
+  return error.issues.some((issue) => issue.path[0] === "confirmPassword")
+    ? "password-mismatch"
+    : "invalid-password";
+}
+
+export function passwordUpdateErrorMessage(value: string | undefined) {
+  if (!value) return null;
+  return passwordUpdateErrorMessages[value] ?? "Không thể cập nhật mật khẩu.";
+}
+
 const emailOtpTypes = ["signup", "invite", "magiclink", "recovery", "email_change", "email"] as const;
 
 export type SupportedEmailOtpType = (typeof emailOtpTypes)[number];

@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { passwordUpdateSchema } from "@/features/auth/password";
+import { passwordUpdateErrorCode, passwordUpdateSchema } from "@/features/auth/password";
 import { createClient } from "@/lib/supabase/server";
 
 export async function updatePassword(formData: FormData) {
@@ -9,7 +9,7 @@ export async function updatePassword(formData: FormData) {
     password: formData.get("password"),
     confirmPassword: formData.get("confirmPassword"),
   });
-  if (!parsed.success) redirect(`/auth/update-password?error=${encodeURIComponent(parsed.error.issues[0].message)}`);
+  if (!parsed.success) redirect(`/auth/update-password?error=${passwordUpdateErrorCode(parsed.error)}`);
 
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
