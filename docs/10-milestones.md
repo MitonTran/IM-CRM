@@ -42,7 +42,7 @@ M6.3 đã có hội thoại owner-only, 7 tool đọc allowlist, hybrid RAG có 
 
 M7.1 đã có CSP nonce theo request, security headers, liveness endpoint, global error/404, Vercel cron cho retention AI, Playwright E2E cho đăng nhập/phạm vi Sale–Leader–Admin và performance budget production-like trong CI. Workflow có đăng nhập trên Vercel Preview ngày 2026-08-09 đã pass public smoke, lab Web Vitals và Lighthouse desktop cho `/login`, `/dashboard`, `/customers`; cả ba route đạt Accessibility `1.00` và không còn audit accessibility thất bại. Bằng chứng nằm tại `docs/18-preview-performance-evidence.md`. Luồng mời người dùng cũng đã có recovery idempotent trên Preview: lỗi gửi email giữ profile chưa kích hoạt với đúng role/team, gửi lại cùng email không được ghi đè tài khoản đã hoạt động, và RPC Admin-only đã qua 353 database/RLS tests với năm vai trò. Phần automation security/performance đã hoàn tất; UAT có người dùng ký duyệt vẫn là điều kiện chưa hoàn tất.
 
-M7.2 đã có bản nháp runbook Preview→Production, rollback/incident/backup, checklist UAT năm vai trò và GitHub workflow smoke test deployment chỉ đọc. Chưa đánh dấu hoàn tất cho đến khi chốt RTO/RPO + Supabase plan, diễn tập restore và ký UAT trên Preview.
+M7.2 đã có bản nháp runbook Preview→Production, rollback/incident/backup, checklist UAT năm vai trò, GitHub workflow smoke test deployment chỉ đọc và restore drill tự động trên database local/disposable. Chưa đánh dấu hoàn tất cho đến khi chốt RTO/RPO + Supabase plan, diễn tập restore từ backup hosted kèm Storage và ký UAT trên Preview.
 
 Schema/RLS phải đi trước UI ghi dữ liệu. AI RAG bắt buộc sau ACL tài liệu; KPI sau khi activity/deal ổn định.
 
