@@ -10,6 +10,7 @@ const previousAiModel = process.env.AI_MODEL;
 const previousOpenRouterKey = process.env.OPENROUTER_API_KEY;
 const previousGeminiKey = process.env.GEMINI_API_KEY;
 const previousDeepSeekKey = process.env.DEEPSEEK_API_KEY;
+const previousGroqKey = process.env.GROQ_API_KEY;
 const previousNvidiaKey = process.env.NVIDIA_NIM_API_KEY;
 
 afterEach(() => {
@@ -22,6 +23,7 @@ afterEach(() => {
   process.env.OPENROUTER_API_KEY = previousOpenRouterKey;
   process.env.GEMINI_API_KEY = previousGeminiKey;
   process.env.DEEPSEEK_API_KEY = previousDeepSeekKey;
+  process.env.GROQ_API_KEY = previousGroqKey;
   process.env.NVIDIA_NIM_API_KEY = previousNvidiaKey;
 });
 
@@ -47,6 +49,7 @@ describe("AI provider environment", () => {
     ["openrouter", "OPENROUTER_API_KEY", "or-test", "openrouter/free", "https://openrouter.ai/api/v1"],
     ["gemini", "GEMINI_API_KEY", "gemini-test", "gemini-3.1-flash-lite", "https://generativelanguage.googleapis.com/v1beta/openai/"],
     ["deepseek", "DEEPSEEK_API_KEY", "deepseek-test", "deepseek-v4-flash", "https://api.deepseek.com"],
+    ["groq", "GROQ_API_KEY", "groq-test", "openai/gpt-oss-20b", "https://api.groq.com/openai/v1"],
     ["nvidia", "NVIDIA_NIM_API_KEY", "nvidia-test", "nvidia/nemotron-3-nano-30b-a3b", "https://integrate.api.nvidia.com/v1"],
   ] as const)("selects %s with its fixed endpoint", (provider, keyName, key, model, baseURL) => {
     process.env.AI_PROVIDER = provider;

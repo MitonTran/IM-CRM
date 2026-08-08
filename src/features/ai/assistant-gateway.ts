@@ -76,7 +76,7 @@ async function structuredCall<T>(input: {
 
   const client = compatibleClient(config);
   const baseRequest = { model: config.model, messages, max_tokens: input.maxOutputTokens };
-  if (config.provider === "gemini") {
+  if (config.provider === "gemini" || config.provider === "groq") {
     const response = await client.chat.completions.parse({ ...baseRequest, reasoning_effort: "low", response_format: zodResponseFormat(input.schema, input.schemaName) });
     const parsed = input.schema.safeParse(response.choices[0]?.message.parsed);
     if (!parsed.success) throw new Error("model_invalid_output");

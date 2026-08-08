@@ -15,7 +15,7 @@
 
 ## Cấu hình AI từ M6
 
-- Chọn `AI_PROVIDER` trong allowlist `openai`, `openrouter`, `gemini`, `deepseek`, `nvidia`; đặt `AI_MODEL` và đúng một key tương ứng trong `.env.local`/Vercel Environment Variables. Không dùng tiền tố `NEXT_PUBLIC_` và không commit giá trị thật.
+- Chọn `AI_PROVIDER` trong allowlist `openai`, `openrouter`, `gemini`, `deepseek`, `groq`, `nvidia`; đặt `AI_MODEL` và đúng một key tương ứng trong `.env.local`/Vercel Environment Variables. Không dùng tiền tố `NEXT_PUBLIC_` và không commit giá trị thật.
 - Endpoint được cố định trong backend, không nhận URL tùy ý từ frontend. Nếu provider/key sai hoặc thiếu, nút phân tích trả thông báo cấu hình và không tạo request/quota dang dở.
 - Gateway vẫn kiểm tra mọi kết quả bằng cùng schema Zod và evidence trong snapshot trước khi lưu. OpenAI dùng Responses API với `store: false`; các provider tương thích dùng Chat Completions.
 - Trang `/ai` dùng hai lượt gọi có cấu trúc: lập kế hoạch tool rồi soạn câu trả lời từ kết quả đã qua RLS. Cần cấu hình `SUPABASE_SERVICE_ROLE_KEY` ở server để chỉ ghi completion/failure; key này không được dùng cho retrieval và không được lộ ra client.
@@ -29,7 +29,10 @@
 | `gemini` | `GEMINI_API_KEY` | `gemini-3.1-flash-lite` | Có free tier theo quota Google AI Studio. |
 | `nvidia` | `NVIDIA_NIM_API_KEY` | `nvidia/nemotron-3-nano-30b-a3b` | Free endpoint/trial cho phát triển, có thể bị rate limit. |
 | `deepseek` | `DEEPSEEK_API_KEY` | `deepseek-v4-flash` | Chi phí thấp nhưng API chính thức không mặc định miễn phí. |
+| `groq` | `GROQ_API_KEY` | `openai/gpt-oss-20b` | Có Free Plan theo rate limit; model mặc định hỗ trợ Structured Outputs strict. |
 | `openai` | `OPENAI_API_KEY` | `gpt-5.6-terra` | Giữ tích hợp Structured Outputs hiện tại. |
+
+Với `AI_PROVIDER=groq`, model ID `openai/gpt-oss-20b` chạy trên GroqCloud bằng `GROQ_API_KEY`; không dùng OpenAI API key hay OpenAI credit. Endpoint và model bám theo [Groq OpenAI compatibility](https://console.groq.com/docs/openai), [Structured Outputs](https://console.groq.com/docs/structured-outputs) và [Free Plan limits](https://console.groq.com/docs/rate-limits).
 
 Ví dụ khởi đầu với OpenRouter:
 

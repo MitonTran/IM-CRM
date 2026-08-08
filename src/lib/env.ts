@@ -32,13 +32,14 @@ export function getSupabaseServiceRoleKey() {
   return key!;
 }
 
-export const AI_PROVIDERS = ["openai", "openrouter", "gemini", "deepseek", "nvidia"] as const;
+export const AI_PROVIDERS = ["openai", "openrouter", "gemini", "deepseek", "groq", "nvidia"] as const;
 export type AiProvider = (typeof AI_PROVIDERS)[number];
 export const AI_PROVIDER_LABELS: Record<AiProvider, string> = {
   openai: "OpenAI",
   openrouter: "OpenRouter",
   gemini: "Google Gemini",
   deepseek: "DeepSeek",
+  groq: "Groq",
   nvidia: "NVIDIA NIM",
 };
 
@@ -47,6 +48,7 @@ const AI_PROVIDER_CONFIG: Record<AiProvider, { keyName: string; defaultModel: st
   openrouter: { keyName: "OPENROUTER_API_KEY", defaultModel: "openrouter/free", baseURL: "https://openrouter.ai/api/v1" },
   gemini: { keyName: "GEMINI_API_KEY", defaultModel: "gemini-3.1-flash-lite", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/" },
   deepseek: { keyName: "DEEPSEEK_API_KEY", defaultModel: "deepseek-v4-flash", baseURL: "https://api.deepseek.com" },
+  groq: { keyName: "GROQ_API_KEY", defaultModel: "openai/gpt-oss-20b", baseURL: "https://api.groq.com/openai/v1" },
   nvidia: { keyName: "NVIDIA_NIM_API_KEY", defaultModel: "nvidia/nemotron-3-nano-30b-a3b", baseURL: "https://integrate.api.nvidia.com/v1" },
 };
 
