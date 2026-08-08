@@ -1,4 +1,5 @@
 export const E2E_PASSWORD = "E2E-ImCrm-2026!";
+export const E2E_RECOVERY_PASSWORD = "E2E-ImCrm-Recovered-2026!";
 
 export const E2E_USERS = {
   admin: { email: "admin.e2e@example.invalid", fullName: "Admin E2E" },
