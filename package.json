@@ -14,6 +14,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "eval:ai:live": "AI_EVAL_LIVE=1 vitest run --config vitest.eval.config.ts",
     "test:e2e": "node scripts/run-e2e.mjs",
     "smoke:deployment": "node scripts/smoke-deployment.mjs",
     "db:start": "supabase start",

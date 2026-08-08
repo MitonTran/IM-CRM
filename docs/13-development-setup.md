@@ -41,6 +41,12 @@ OPENROUTER_API_KEY=<đặt trong môi trường server>
 
 Free tier có điều khoản lưu trữ/sử dụng dữ liệu khác nhau và có thể thay đổi. Chỉ dùng dữ liệu giả trong dev/Preview; không gửi dữ liệu CRM thật cho free endpoint trước khi duyệt điều khoản riêng tư, vùng xử lý dữ liệu, retention và hợp đồng phù hợp.
 
+### Đánh giá provider bằng dữ liệu giả
+
+Chạy `npm run eval:ai:live` khi đã đặt `AI_PROVIDER`, tùy chọn `AI_MODEL` và đúng API key server-only tương ứng. Bộ eval gọi provider thật với ba hợp đồng: phân tích khách hàng có evidence hợp lệ, planner chỉ dùng tool đọc trong allowlist, và câu trả lời bỏ qua prompt injection nằm trong dữ liệu tool. Fixture chỉ dùng UUID giả và miền `example.invalid`; không dùng Supabase, service role hoặc dữ liệu CRM thật.
+
+Workflow thủ công `AI provider evaluation` chạy cùng bộ eval và lưu báo cáo 14 ngày. Chỉ cấu hình key trong GitHub Actions secret mang đúng tên provider; không đưa key vào input, log hay artifact. Workflow không chạy tự động trên pull request để tránh cấp secret cho code chưa duyệt và tránh tiêu quota ngoài ý muốn.
+
 ## Admin đầu tiên
 
 Đây là thao tác bootstrap duy nhất và phải thực hiện trong Supabase Dashboard/SQL Editor của môi trường mới, không qua frontend:

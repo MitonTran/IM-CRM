@@ -38,7 +38,7 @@
 | 7.1 | E2E/UAT/security/performance | 2–6 | docs/training |
 | 7.2 | Runbook, Preview→Production | 7.1 | không |
 
-M6.3 hiện có bản local gồm hội thoại owner-only, 7 tool đọc allowlist, full-text RAG có ACL/citation, quota dùng chung và audit metadata. Semantic/hybrid ranking, eval với provider thật và Preview smoke test được giữ cho bước hardening trước khi đánh dấu M6 hoàn tất.
+M6.3 hiện có bản local gồm hội thoại owner-only, 7 tool đọc allowlist, full-text RAG có ACL/citation, quota dùng chung và audit metadata. Harness eval provider thật bằng dữ liệu giả đã có nhưng vẫn cần một lượt chạy được lưu bằng chứng. Semantic/hybrid ranking và Preview smoke test có đăng nhập được giữ cho bước hardening trước khi đánh dấu M6 hoàn tất.
 
 M7.1 hardening local đã có CSP nonce theo request, security headers, liveness endpoint, global error/404, Vercel cron cho retention AI, Playwright E2E cho đăng nhập/phạm vi Sale–Leader–Admin và performance budget production-like trong CI. Lighthouse/Core Web Vitals trên Preview và UAT có người dùng ký duyệt vẫn là điều kiện chưa hoàn tất.
 
