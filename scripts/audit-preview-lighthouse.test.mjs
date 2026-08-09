@@ -8,10 +8,10 @@ import {
 function lhrWithScores(scores = {}) {
   return {
     categories: {
-      performance: { score: scores.performance ?? 0.9 },
-      accessibility: { score: scores.accessibility ?? 0.95 },
-      "best-practices": { score: scores.bestPractices ?? 0.95 },
-      seo: { score: scores.seo ?? 0.9 },
+      performance: { score: scores.performance ?? 0.9, auditRefs: [] },
+      accessibility: { score: scores.accessibility ?? 0.95, auditRefs: [] },
+      "best-practices": { score: scores.bestPractices ?? 0.95, auditRefs: [] },
+      seo: { score: scores.seo ?? 0.9, auditRefs: [] },
     },
     audits: {
       "first-contentful-paint": { numericValue: 800.4 },

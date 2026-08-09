@@ -36,6 +36,12 @@ function roundedMetric(audit) {
   return Math.round(audit?.numericValue ?? 0);
 }
 
+function failedAudits(category, audits) {
+  return (category?.auditRefs ?? [])
+    .filter((reference) => reference.weight > 0 && audits[reference.id]?.score !== 1)
+    .map((reference) => ({ id: reference.id, score: audits[reference.id]?.score ?? null }));
+}
+
 export function summarizeLighthouseResult(route, lhr, budget = LIGHTHOUSE_SCORE_BUDGET) {
   const scores = {
     performance: roundedScore(lhr.categories.performance?.score),
@@ -49,8 +55,15 @@ export function summarizeLighthouseResult(route, lhr, budget = LIGHTHOUSE_SCORE_
   return {
     route,
     status: Object.values(checks).every((check) => check.pass) ? "pass" : "fail",
+    runtimeError: lhr.runtimeError ? { code: lhr.runtimeError.code, message: lhr.runtimeError.message } : null,
     scores,
     checks,
+    failedAudits: {
+      performance: failedAudits(lhr.categories.performance, lhr.audits),
+      accessibility: failedAudits(lhr.categories.accessibility, lhr.audits),
+      bestPractices: failedAudits(lhr.categories["best-practices"], lhr.audits),
+      seo: failedAudits(lhr.categories.seo, lhr.audits),
+    },
     metrics: {
       fcpMs: roundedMetric(lhr.audits["first-contentful-paint"]),
       lcpMs: roundedMetric(lhr.audits["largest-contentful-paint"]),
