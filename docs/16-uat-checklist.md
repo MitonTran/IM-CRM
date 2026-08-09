@@ -25,7 +25,7 @@ Chỉ thực hiện trên Vercel Preview + Supabase Preview bằng dữ liệu g
 | Khách hàng | Pass | Danh sách, bộ lọc, phân trang có nhãn, drawer hồ sơ, timeline, follow-up, deal và công cụ quản trị hiển thị bằng dữ liệu giả; không có lỗi console. |
 | Kho tài liệu | Pass | Tài liệu organization ở trạng thái `Sẵn sàng cho AI`, semantic index sẵn sàng, lịch sử phiên bản và route signed URL hoạt động. |
 | Trợ lý AI | Pass | Provider Groq, quota, token/latency, câu trả lời chỉ đọc và citation tới đúng tài liệu hiển thị; citation mở file private qua Supabase signed URL. |
-| Tài khoản UAT | Blocked | Sale B/Team B và Leader Team A đã tạo đúng. Lời mời Leader Team B tạo profile chưa kích hoạt nhưng rơi về role Sale, chưa có team; chưa thể kiểm tra chéo RLS/quyền Team B. |
+| Tài khoản UAT | Pass (thiết lập) | Preview hiện có đủ Admin, Sale A, Sale B/Team B, Leader Team A và Leader Team B; Leader Team B hiển thị đúng role Leader, Team B và trạng thái hoạt động. Kiểm tra chéo bằng từng phiên đăng nhập vẫn chưa thay thế ký duyệt UAT. |
 
 Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài khoản nhiều vai trò, thực hiện các bước ghi bằng dữ liệu giả và người dùng ký duyệt.
 
@@ -35,7 +35,13 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Kỳ vọng: Leader Team B được gán role Leader, Team B và có trạng thái phù hợp sau lời mời.
 - Thực tế: auth user/profile được tạo nhưng profile giữ mặc định `sale`, `team_id = null`, `is_active = false`.
 - Chẩn đoán: trigger `handle_new_auth_user()` chủ động tạo profile mặc định trước; `invitePerson()` chỉ cập nhật role/team sau khi `inviteUserByEmail()` thành công. Nếu bước gửi lời mời lỗi sau khi auth user đã được tạo, action chuyển sang `invite-failed` và bỏ qua profile update, để lại trạng thái một phần.
-- Trạng thái: Blocked. Cần thiết kế luồng invite/recovery idempotent và kiểm thử quyền trước khi sửa profile hoặc tiếp tục UAT nhiều vai trò.
+- Khắc phục tại commit `61336c9192b4e4f95a9fc622e6056263859a5a97`, migration `20260809000200_m7_invitation_recovery.sql`:
+  - RPC `configure_invited_profile` chỉ cho Admin đang hoạt động, chỉ xử lý profile chưa kích hoạt, kiểm tra team hoạt động và ghi audit qua trigger hiện có.
+  - Khi Supabase chưa gửi được email, role/team dự kiến được lưu nhưng profile vẫn chưa kích hoạt; Admin có thể gửi lại cùng email.
+  - Profile chỉ được kích hoạt sau khi `inviteUserByEmail()` trả thành công; tài khoản đã xác nhận/đã đăng nhập/đang hoạt động bị từ chối khỏi luồng recovery.
+- Kiểm tra: local lint/typecheck `Pass`, unit `77/77`, database/RLS `353/353` với Sale A, Sale B, Leader A, Leader B và Admin; Quality workflow `31317594842` pass application/database/E2E; Vercel deployment của commit trên pass.
+- Đối chiếu Preview sau deploy: trang `/admin/people` tải đúng UI mới và hiển thị Leader Team B là `Sale Leader` / `Team B` / `Hoạt động`, tổng cộng 5 tài khoản UAT đúng vai trò.
+- Trạng thái: Resolved on Preview. Không gửi lại email live cho Leader Team B sau deploy vì tài khoản đã hoạt động; nhánh rate-limit/retry được xác minh bằng unit + database/RLS test, còn kiểm tra chéo bằng phiên đăng nhập từng vai trò vẫn thuộc checklist UAT bên dưới.
 
 ## Smoke test chung
 
