@@ -132,7 +132,7 @@ async function createAuthenticatedState(browser, baseUrl, credentials, bypassSec
     await page.getByRole("button", { name: "Đăng nhập" }).click();
     await page.waitForURL(/\/dashboard(?:\?|$)/, { timeout: 15_000 });
     await page.getByText("Bảng hiệu suất", { exact: true }).first().waitFor({ state: "visible", timeout: 10_000 });
-    return context.storageState();
+    return await context.storageState();
   } catch {
     throw new Error("Không thể đăng nhập tài khoản UAT trên Preview; kiểm tra credential, trạng thái user và Supabase Preview.");
   } finally {
