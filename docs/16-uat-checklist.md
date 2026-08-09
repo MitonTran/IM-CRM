@@ -69,7 +69,17 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Khắc phục: recovery đặt `RedirectTo` tới `/auth/confirm` cùng origin; template Reset password dùng `{{ .RedirectTo }}`, `{{ .TokenHash }}` và `type=recovery`. Route server gọi `verifyOtp` rồi mới chuyển tới `/auth/update-password`, nên không phụ thuộc trình duyệt đã gửi yêu cầu.
 - Người dùng xác nhận đã thêm hostname UAT `/auth/confirm` vào Supabase Preview Redirect URLs trước khi deploy code. Không thay đổi Production hoặc schema/database.
 - Kiểm tra cục bộ lúc `2026-08-09T16:24:40Z`: lint `Pass`, typecheck `Pass`, unit `90/90`, production build `Pass`, database/RLS `353/353`.
-- Trạng thái: chờ deploy code TokenHash, sau đó cập nhật riêng template Reset password trên Supabase Preview và thử bằng email recovery mới.
+- Triển khai: commit `6aef12f527c0` đã deploy lên Vercel Preview; Quality workflow `31323772367` pass application, database/restore drill, E2E và Vercel deployment. Template Reset password trên Supabase Preview đã được cập nhật thủ công để dùng `RedirectTo` + `TokenHash`; không ghi token hoặc secret vào repository.
+- Kiểm tra live lúc `2026-08-09T16:46:04Z`: người dùng xác nhận email recovery mới đưa Sale A qua trang đặt mật khẩu và đăng nhập thành công trên Preview. Không thay đổi Production.
+- Trạng thái: Resolved on Preview. Password recovery của Sale A `Pass`; các kiểm tra phạm vi dữ liệu và ký duyệt đầy đủ của Sale A vẫn tiếp tục theo checklist bên dưới.
+
+### UAT-04 — Sale không tạo được khách vì thiếu trường quản trị ẩn
+
+- Phát hiện trong phiên UAT Sale A ngày `2026-08-09`: Dashboard, chặn trang Admin, quyền chỉ đọc tài liệu và đăng xuất/đăng nhập lại đều được người dùng xác nhận `Pass`; form tạo khách trả `Invalid input`.
+- Nguyên nhân: UI không render `ownerUserId` và `teamId` cho Sale, nhưng schema Server Action vẫn yêu cầu hai field phải có mặt. Validation dừng request trước RPC; database và RLS không bị thay đổi.
+- Khắc phục local: hai field quản trị được phép vắng mặt và chuẩn hóa thành `null`; RPC vẫn tự lấy owner/team từ phiên Sale đã xác thực. Giá trị UUID sai nếu được gửi thủ công vẫn bị từ chối.
+- Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `93/93`, production build bằng Webpack `Pass`. Turbopack trong sandbox Codex bị chặn bind cổng nội bộ; đây là giới hạn môi trường và cần được đối chiếu lại bởi Vercel Preview build.
+- Trạng thái: chờ deploy Preview và người dùng thử lại bằng dữ liệu giả. Chưa đánh dấu toàn bộ checklist Sale A là `Pass`.
 
 ## Smoke test chung
 

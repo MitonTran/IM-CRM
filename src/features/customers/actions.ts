@@ -4,18 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { ACTIVITY_OUTCOMES, ACTIVITY_TYPES, CUSTOMER_PRIORITIES, CUSTOMER_STATUSES } from "./types";
+import { createCustomerSchema } from "./validation";
 
 export type CustomerActionState = { ok: boolean; message: string; customerId?: string };
 
 const nullableText = (max: number) => z.string().trim().max(max).optional().transform((value) => value || null);
-const createSchema = z.object({
-  fullName: z.string().trim().min(2, "Tên cần ít nhất 2 ký tự.").max(120),
-  phone: nullableText(30), email: z.union([z.literal(""), z.email("Email chưa đúng định dạng.")]).transform((v) => v || null),
-  sourceId: z.uuid("Hãy chọn nguồn khách."), priority: z.enum(CUSTOMER_PRIORITIES), noteSummary: nullableText(2000),
-  ownerUserId: z.union([z.literal(""), z.uuid()]).transform((v) => v || null),
-  teamId: z.union([z.literal(""), z.uuid()]).transform((v) => v || null),
-  tagIds: z.array(z.uuid()).max(10),
-}).refine((value) => value.phone || value.email, { message: "Cần ít nhất số điện thoại hoặc email.", path: ["phone"] });
 
 function formObject(formData: FormData) { return Object.fromEntries(formData.entries()); }
 async function authenticatedClient() {
@@ -36,7 +29,7 @@ function friendlyError(message: string) {
 }
 
 export async function createCustomerAction(_: CustomerActionState, formData: FormData): Promise<CustomerActionState> {
-  const parsed = createSchema.safeParse({ ...formObject(formData), tagIds: formData.getAll("tagIds") });
+  const parsed = createCustomerSchema.safeParse({ ...formObject(formData), tagIds: formData.getAll("tagIds") });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Dữ liệu chưa hợp lệ." };
   const supabase = await authenticatedClient();
   if (!supabase) return { ok: false, message: "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại." };
