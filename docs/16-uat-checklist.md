@@ -59,7 +59,8 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Khắc phục code: recovery và invitation lấy HTTPS origin của chính Server Action khi `Origin` khớp `Host`/`X-Forwarded-Host`; chỉ cho phép HTTP ở localhost và chỉ dùng `NEXT_PUBLIC_APP_URL` làm fallback đã kiểm tra.
 - Khắc phục cấu hình lúc `2026-08-09T15:49:11Z`: Supabase Preview ref `mhnvjuppwyoqibhtevhv` đã thêm hai Redirect URLs `/auth/callback` và `/auth/callback?next=/auth/update-password` cho hostname UAT `im-crm-git-codex-preview-p-2d339c-…vercel.app`. Không thay đổi Site URL hoặc Production.
 - Kiểm tra cục bộ: lint `Pass`, typecheck `Pass`, unit `89/89`, production build `Pass`; unit mới bao phủ Preview same-origin, local HTTP, origin độc hại/sai host và fallback an toàn.
-- Trạng thái: chờ Vercel deploy commit sửa và người dùng yêu cầu một email recovery mới trong cùng trình duyệt để xác nhận live flow; link cũ đã dùng/hết hạn không được tái sử dụng.
+- Triển khai: commit `2f315d1` đã deploy lên Vercel Preview; Quality workflow `31322197374` pass application, database/restore drill và E2E. Smoke chỉ đọc lúc `2026-08-09T15:53:57Z` pass health, login content, security headers và response budget; `/auth/forgot-password` trả `200` trên hostname UAT.
+- Trạng thái: code và cấu hình Preview đã hoàn tất; còn chờ người dùng yêu cầu một email recovery mới trong cùng trình duyệt để xác nhận live flow. Link cũ đã dùng/hết hạn không được tái sử dụng.
 
 ## Smoke test chung
 
