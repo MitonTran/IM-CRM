@@ -43,6 +43,15 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Đối chiếu Preview sau deploy: trang `/admin/people` tải đúng UI mới và hiển thị Leader Team B là `Sale Leader` / `Team B` / `Hoạt động`, tổng cộng 5 tài khoản UAT đúng vai trò.
 - Trạng thái: Resolved on Preview. Không gửi lại email live cho Leader Team B sau deploy vì tài khoản đã hoạt động; nhánh rate-limit/retry được xác minh bằng unit + database/RLS test, còn kiểm tra chéo bằng phiên đăng nhập từng vai trò vẫn thuộc checklist UAT bên dưới.
 
+### Bằng chứng tích hợp Auth recovery và restore drill ngày 2026-08-09
+
+- Commit SHA: `c19b07f919b81e91669808ef63e0e9bf252d5caa`.
+- Hoàn tất đối chiếu lúc: `2026-08-09T14:42:49Z` trên Vercel/Supabase Preview; Production không thay đổi.
+- Password recovery: invite dùng callback allowlist tới `/auth/update-password`; trang `/auth/forgot-password` hiển thị đúng trên Preview, email sai bị browser validation chặn và không phát sinh email. Phản hồi gửi email không tiết lộ tài khoản có tồn tại.
+- Luồng tạo recovery token, đặt mật khẩu mới, từ chối mật khẩu cũ và đăng nhập bằng mật khẩu mới đã pass trong E2E local-only của Quality workflow `31318905871`; không dùng service-role hoặc token thật trên Preview.
+- Restore drill: local run pass backup/restore isolated/fixture/migration/count/RLS và đã tự xóa database disposable; database job của workflow trên cũng pass và lưu artifact `restore-drill-report` 14 ngày.
+- Giới hạn: chưa gửi email recovery thật và chưa đổi mật khẩu tài khoản UAT Preview trong phiên hỗ trợ này. Người dùng vẫn cần hoàn tất invite/recovery trong email để thực hiện checklist đăng nhập chéo và ký duyệt.
+
 ## Smoke test chung
 
 - [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
