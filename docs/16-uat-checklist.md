@@ -11,6 +11,24 @@ Chỉ thực hiện trên Vercel Preview + Supabase Preview bằng dữ liệu g
 - Người điều phối:
 - Thời gian bắt đầu/kết thúc (UTC):
 
+### Bằng chứng kiểm tra đọc Admin ngày 2026-08-09
+
+- Commit SHA: `85078011a536c67e1ca11a2258133747a9b4ff4b`.
+- Vercel Preview: `https://im-crm-git-codex-preview-p-2d339c-thongtmmmd-gmailcoms-projects.vercel.app`.
+- Supabase Preview ref: `mhnvjuppwyoqibhtevhv`.
+- Hoàn tất lúc: `2026-08-09T12:13:04Z`.
+- Phạm vi: kiểm tra đọc có hỗ trợ trên phiên Admin UAT; không tạo, sửa, xóa dữ liệu và không thay thế ký duyệt của người dùng.
+
+| Khu vực | Kết quả | Bằng chứng |
+|---|---|---|
+| Dashboard Admin | Pass | Bộ lọc all/team/user/source có accessible name; KPI, funnel, leaderboard và target form hiển thị; không có lỗi console. |
+| Khách hàng | Pass | Danh sách, bộ lọc, phân trang có nhãn, drawer hồ sơ, timeline, follow-up, deal và công cụ quản trị hiển thị bằng dữ liệu giả; không có lỗi console. |
+| Kho tài liệu | Pass | Tài liệu organization ở trạng thái `Sẵn sàng cho AI`, semantic index sẵn sàng, lịch sử phiên bản và route signed URL hoạt động. |
+| Trợ lý AI | Pass | Provider Groq, quota, token/latency, câu trả lời chỉ đọc và citation tới đúng tài liệu hiển thị; citation mở file private qua Supabase signed URL. |
+| Tài khoản UAT | Blocked | Preview hiện chỉ có Admin và Sale A hoạt động; thiếu Sale B, Leader team A và Leader team B để kiểm tra chéo RLS/quyền. |
+
+Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài khoản nhiều vai trò, thực hiện các bước ghi bằng dữ liệu giả và người dùng ký duyệt.
+
 ## Smoke test chung
 
 - [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
