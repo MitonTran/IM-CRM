@@ -39,7 +39,13 @@ function roundedMetric(audit) {
 function failedAudits(category, audits) {
   return (category?.auditRefs ?? [])
     .filter((reference) => reference.weight > 0 && audits[reference.id]?.score !== 1)
-    .map((reference) => ({ id: reference.id, score: audits[reference.id]?.score ?? null }));
+    .map((reference) => {
+      const audit = audits[reference.id];
+      const selectors = [...new Set(
+        (audit?.details?.items ?? []).map((item) => item.node?.selector).filter((selector) => typeof selector === "string"),
+      )].slice(0, 10);
+      return { id: reference.id, score: audit?.score ?? null, selectors };
+    });
 }
 
 export function summarizeLighthouseResult(route, lhr, budget = LIGHTHOUSE_SCORE_BUDGET) {
