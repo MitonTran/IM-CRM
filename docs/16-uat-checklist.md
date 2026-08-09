@@ -62,6 +62,15 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Triển khai: commit `2f315d1` đã deploy lên Vercel Preview; Quality workflow `31322197374` pass application, database/restore drill và E2E. Smoke chỉ đọc lúc `2026-08-09T15:53:57Z` pass health, login content, security headers và response budget; `/auth/forgot-password` trả `200` trên hostname UAT.
 - Trạng thái: code và cấu hình Preview đã hoàn tất; còn chờ người dùng yêu cầu một email recovery mới trong cùng trình duyệt để xác nhận live flow. Link cũ đã dùng/hết hạn không được tái sử dụng.
 
+### UAT-03 — recovery vẫn phụ thuộc PKCE của trình duyệt gửi yêu cầu
+
+- Phát hiện khi người dùng thử lại live recovery sau UAT-02: ứng dụng vẫn trả `recovery-expired` khi link email được mở ngoài phiên trình duyệt đã gửi form.
+- Bằng chứng Auth log đã khử PII: `/recover` trả `200`, sau đó `/verify` trả `303` và referer trỏ đúng hostname UAT; không có lượt `/token` tiếp theo để đổi authorization code thành session. Supabase đã nhận và xác minh link, nhưng callback ứng dụng thiếu PKCE code verifier của trình duyệt ban đầu.
+- Khắc phục: recovery đặt `RedirectTo` tới `/auth/confirm` cùng origin; template Reset password dùng `{{ .RedirectTo }}`, `{{ .TokenHash }}` và `type=recovery`. Route server gọi `verifyOtp` rồi mới chuyển tới `/auth/update-password`, nên không phụ thuộc trình duyệt đã gửi yêu cầu.
+- Người dùng xác nhận đã thêm hostname UAT `/auth/confirm` vào Supabase Preview Redirect URLs trước khi deploy code. Không thay đổi Production hoặc schema/database.
+- Kiểm tra cục bộ lúc `2026-08-09T16:24:40Z`: lint `Pass`, typecheck `Pass`, unit `90/90`, production build `Pass`, database/RLS `353/353`.
+- Trạng thái: chờ deploy code TokenHash, sau đó cập nhật riêng template Reset password trên Supabase Preview và thử bằng email recovery mới.
+
 ## Smoke test chung
 
 - [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.

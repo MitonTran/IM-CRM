@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { headers } from "next/headers";
-import { resolveAuthRedirectOrigin } from "@/features/auth/origin";
+import { authConfirmRedirectTo, resolveAuthRedirectOrigin } from "@/features/auth/origin";
 import { passwordResetRequestSchema } from "@/features/auth/password";
 import { hasSupabaseEnv } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
@@ -16,7 +16,7 @@ export async function requestPasswordReset(formData: FormData) {
   const supabase = await createClient();
   const appUrl = resolveAuthRedirectOrigin(await headers(), process.env.NEXT_PUBLIC_APP_URL);
   const { error } = await supabase.auth.resetPasswordForEmail(parsed.data.email, {
-    redirectTo: `${appUrl}/auth/callback?next=/auth/update-password`,
+    redirectTo: authConfirmRedirectTo(appUrl),
   });
   if (error) redirect("/auth/forgot-password?error=request-failed");
 

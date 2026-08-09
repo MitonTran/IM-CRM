@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { parseSafeAuthOrigin, resolveAuthRedirectOrigin } from "./origin";
+import { authConfirmRedirectTo, parseSafeAuthOrigin, resolveAuthRedirectOrigin } from "./origin";
 
 function requestHeaders(values: Record<string, string>) {
   const normalized = new Map(Object.entries(values).map(([key, value]) => [key.toLowerCase(), value]));
@@ -36,5 +36,12 @@ describe("auth redirect origin", () => {
   it("từ chối khi request và fallback đều không an toàn", () => {
     expect(() => resolveAuthRedirectOrigin(requestHeaders({}), "http://crm.example.com"))
       .toThrow("Thiếu origin an toàn");
+  });
+
+  it("tạo RedirectTo token-hash ở route confirm cùng origin", () => {
+    expect(authConfirmRedirectTo("https://preview.example.com"))
+      .toBe("https://preview.example.com/auth/confirm");
+    expect(() => authConfirmRedirectTo("http://preview.example.com"))
+      .toThrow("Origin xác thực không an toàn");
   });
 });

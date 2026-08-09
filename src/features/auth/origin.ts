@@ -31,3 +31,9 @@ export function resolveAuthRedirectOrigin(requestHeaders: Pick<Headers, "get">, 
   if (fallbackOrigin) return fallbackOrigin;
   throw new Error("Thiếu origin an toàn cho liên kết xác thực.");
 }
+
+export function authConfirmRedirectTo(origin: string) {
+  const safeOrigin = parseSafeAuthOrigin(origin);
+  if (!safeOrigin) throw new Error("Origin xác thực không an toàn.");
+  return `${safeOrigin}/auth/confirm`;
+}
