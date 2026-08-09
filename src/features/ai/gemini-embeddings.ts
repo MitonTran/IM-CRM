@@ -45,10 +45,8 @@ export async function createGeminiEmbeddings(inputs: string[], taskType: GeminiE
           requests: inputs.map((text) => ({
             model,
             content: { parts: [{ text }] },
-            embedContentConfig: {
-              taskType,
-              outputDimensionality: config.dimensions,
-            },
+            taskType,
+            outputDimensionality: config.dimensions,
           })),
         }),
         signal: AbortSignal.timeout(20_000),

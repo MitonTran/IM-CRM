@@ -33,7 +33,8 @@ describe("Gemini embeddings client", () => {
     expect(body.requests).toHaveLength(2);
     expect(body.requests[0]).toMatchObject({
       model: "models/gemini-embedding-001",
-      embedContentConfig: { taskType: "RETRIEVAL_DOCUMENT", outputDimensionality: 1536 },
+      taskType: "RETRIEVAL_DOCUMENT",
+      outputDimensionality: 1536,
     });
     expect(String(request.body)).not.toContain("gemini-test-only");
   });
