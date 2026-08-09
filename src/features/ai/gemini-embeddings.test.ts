@@ -55,4 +55,18 @@ describe("Gemini embeddings client", () => {
     await expect(createGeminiEmbeddings(["Câu hỏi giả"], "RETRIEVAL_QUERY"))
       .rejects.toMatchObject({ code });
   });
+
+  it("maps transport failures without exposing the underlying error", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new Error("private transport detail")));
+    await expect(createGeminiEmbeddings(["Câu hỏi giả"], "RETRIEVAL_QUERY"))
+      .rejects.toMatchObject({ code: "provider_unavailable", message: "gemini_embedding_provider_unavailable" });
+  });
+
+  it("maps malformed vectors to a safe response code", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response(JSON.stringify({
+      embeddings: [{ values: [0.1, 0.2] }],
+    }), { status: 200, headers: { "content-type": "application/json" } })));
+    await expect(createGeminiEmbeddings(["Câu hỏi giả"], "RETRIEVAL_QUERY"))
+      .rejects.toMatchObject({ code: "invalid_response", message: "gemini_embedding_invalid_response" });
+  });
 });

@@ -9,6 +9,7 @@ export type GeminiEmbeddingFailureCode =
   | "unauthorized"
   | "quota_exceeded"
   | "provider_unavailable"
+  | "invalid_response"
   | "request_failed";
 
 export class GeminiEmbeddingError extends Error {
@@ -30,27 +31,36 @@ export async function createGeminiEmbeddings(inputs: string[], taskType: GeminiE
   assertEmbeddingInputs(inputs);
   const config = getGeminiEmbeddingConfig();
   const model = `models/${config.model}`;
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/${model}:batchEmbedContents`,
-    {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-goog-api-key": config.apiKey,
+  let response: Response;
+  try {
+    response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/${model}:batchEmbedContents`,
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-goog-api-key": config.apiKey,
+        },
+        body: JSON.stringify({
+          requests: inputs.map((text) => ({
+            model,
+            content: { parts: [{ text }] },
+            embedContentConfig: {
+              taskType,
+              outputDimensionality: config.dimensions,
+            },
+          })),
+        }),
+        signal: AbortSignal.timeout(20_000),
       },
-      body: JSON.stringify({
-        requests: inputs.map((text) => ({
-          model,
-          content: { parts: [{ text }] },
-          embedContentConfig: {
-            taskType,
-            outputDimensionality: config.dimensions,
-          },
-        })),
-      }),
-      signal: AbortSignal.timeout(20_000),
-    },
-  );
+    );
+  } catch {
+    throw new GeminiEmbeddingError("provider_unavailable");
+  }
   if (!response.ok) throw new GeminiEmbeddingError(failureCodeForStatus(response.status));
-  return parseEmbeddingVectors(await response.json() as { embeddings?: Array<{ values?: number[] }> }, inputs.length);
+  try {
+    return parseEmbeddingVectors(await response.json() as { embeddings?: Array<{ values?: number[] }> }, inputs.length);
+  } catch {
+    throw new GeminiEmbeddingError("invalid_response");
+  }
 }

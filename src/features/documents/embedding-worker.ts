@@ -11,18 +11,26 @@ import { createAdminClient } from "@/lib/supabase/admin";
 
 type ClaimedEmbedding = { version_id: string };
 type ChunkForEmbedding = { id: string; content: string };
+type EmbeddingFailureCode = GeminiEmbeddingFailureCode | "chunks_unavailable" | "chunks_empty" | "commit_failed" | "unexpected";
 export type EmbeddingResult = {
   versionId: string | null;
   status: "ready" | "pending" | "failed" | "empty";
   chunks?: number;
-  failureCode?: GeminiEmbeddingFailureCode;
+  failureCode?: EmbeddingFailureCode;
 };
 
-function safeEmbeddingError(error: unknown) {
-  if (!(error instanceof GeminiEmbeddingError)) {
-    return "Không thể tạo chỉ mục ngữ nghĩa. Tìm kiếm từ khóa vẫn hoạt động.";
+function failureCode(error: unknown): EmbeddingFailureCode {
+  if (error instanceof GeminiEmbeddingError) return error.code;
+  if (error instanceof Error) {
+    if (error.message === "document_embedding_chunks_unavailable") return "chunks_unavailable";
+    if (error.message === "document_embedding_chunks_empty") return "chunks_empty";
+    if (error.message === "document_embedding_commit_failed") return "commit_failed";
   }
-  switch (error.code) {
+  return "unexpected";
+}
+
+function safeEmbeddingError(code: EmbeddingFailureCode) {
+  switch (code) {
     case "unauthorized":
       return "Gemini từ chối API key. Kiểm tra GEMINI_API_KEY của Preview.";
     case "quota_exceeded":
@@ -31,8 +39,15 @@ function safeEmbeddingError(error: unknown) {
       return "Gemini không chấp nhận yêu cầu embedding. Kiểm tra cấu hình model.";
     case "provider_unavailable":
       return "Dịch vụ embedding Gemini đang tạm thời không khả dụng. Hãy thử lại sau.";
+    case "invalid_response":
+      return "Gemini trả về vector không đúng hợp đồng 1536 chiều.";
+    case "chunks_unavailable":
+    case "chunks_empty":
+      return "Không thể đọc nội dung đã trích xuất để lập semantic index.";
+    case "commit_failed":
+      return "Không thể lưu vector Gemini vào semantic index Supabase.";
     default:
-      return "Không thể gọi dịch vụ embedding Gemini. Tìm kiếm từ khóa vẫn hoạt động.";
+      return "Không thể tạo chỉ mục ngữ nghĩa. Tìm kiếm từ khóa vẫn hoạt động.";
   }
 }
 
@@ -72,11 +87,12 @@ async function processClaimedEmbedding(row: ClaimedEmbedding): Promise<Embedding
     if (stored.error || typeof stored.data !== "number") throw new Error("document_embedding_commit_failed");
     return { versionId: row.version_id, status: stored.data === 0 ? "ready" : "pending", chunks: chunks.length };
   } catch (error) {
-    await failEmbedding(row.version_id, safeEmbeddingError(error));
+    const code = failureCode(error);
+    await failEmbedding(row.version_id, safeEmbeddingError(code));
     return {
       versionId: row.version_id,
       status: "failed",
-      failureCode: error instanceof GeminiEmbeddingError ? error.code : undefined,
+      failureCode: code,
     };
   }
 }
