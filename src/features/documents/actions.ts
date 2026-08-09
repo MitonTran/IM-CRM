@@ -97,3 +97,24 @@ export async function processDocumentNowAction(_: DocumentActionState, formData:
     return { ok: false, message: "Không thể trích xuất file. Trạng thái lỗi đã được lưu." };
   } catch { return { ok: false, message: "Worker chưa được cấu hình secret Supabase phía server." }; }
 }
+
+export async function retryDocumentEmbeddingAction(_: DocumentActionState, formData: FormData): Promise<DocumentActionState> {
+  const parsed = z.object({ versionId: z.uuid() }).safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) return { ok: false, message: "Phiên bản chưa hợp lệ." };
+  const supabase = await authenticatedClient();
+  if (!supabase) return { ok: false, message: "Phiên đăng nhập đã hết hạn." };
+  const { data: version } = await supabase.from("document_versions")
+    .select("document_id, extraction_status, embedding_status")
+    .eq("id", parsed.data.versionId)
+    .single();
+  if (!version) return { ok: false, message: "Không tìm thấy phiên bản hoặc bạn không có quyền." };
+  const { data: allowed } = await supabase.rpc("can_manage_document", { target_document_id: version.document_id });
+  if (!allowed) return { ok: false, message: "Bạn không có quyền lập lại chỉ mục tài liệu này." };
+  if (version.extraction_status !== "ready" || version.embedding_status !== "failed") {
+    return { ok: false, message: "Phiên bản không ở trạng thái có thể thử lập chỉ mục lại." };
+  }
+  const { error } = await supabase.rpc("retry_document_embedding", { target_version_id: parsed.data.versionId });
+  if (error) return { ok: false, message: "Không thể đưa semantic index vào hàng đợi lại." };
+  revalidatePath("/documents");
+  return { ok: true, message: "Đã đưa semantic index vào hàng đợi xử lý lại." };
+}

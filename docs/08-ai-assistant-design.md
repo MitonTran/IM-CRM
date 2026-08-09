@@ -52,7 +52,7 @@ Score là gợi ý 0–100, không dùng tự động phân công hay loại kh�
 | `get_kpi_summary(period, filters)` | KPI đã định nghĩa | ép user/team theo role |
 | `get_revenue_summary(period, group_by)` | tổng hợp deal | scope theo role |
 | `get_funnel_summary(period, filters)` | phễu | scope theo role |
-| `search_documents(query, filters)` | full-text search chunks; có thể bổ sung semantic ranking khi chốt embedding model | lọc document ACL trước trả chunks |
+| `search_documents(query, filters)` | hybrid RRF giữa full-text và cosine semantic; fallback full-text nếu embedding chưa sẵn sàng | lọc document ACL trước trả chunks |
 | `get_document_excerpt(version_id, locator)` | đoạn trích có citation | kiểm tra lại ACL/version |
 
 Tool không nhận `user_id/team_id` tùy ý từ model; backend lấy session và giao phần giao với filter được phép. Output giới hạn dòng/kích thước, không trả trường không cần thiết.
@@ -77,7 +77,7 @@ Tool không nhận `user_id/team_id` tùy ý từ model; backend lấy session v
 
 - Planner trả tối đa 3 tool calls và bị Zod từ chối nếu có tool/argument ngoài allowlist; model không nhận `user_id`, `team_id`, SQL hoặc endpoint.
 - Mọi tool CRM/RAG chạy bằng Supabase client của phiên đăng nhập. `service_role` chỉ hoàn tất trạng thái/kết quả AI sau khi backend kiểm tra citation và không dùng để đọc dữ liệu nguồn.
-- Retrieval tài liệu hiện dùng full-text search có giới hạn 6 chunks, tối đa 1.800 ký tự/chunk. RLS của document/version/chunk được áp dụng trước ranking.
+- Retrieval tài liệu dùng hybrid RRF giữa full-text và Google `gemini-embedding-001` 1536 chiều, giới hạn 6 chunks và tối đa 1.800 ký tự/chunk. Nếu key/query embedding lỗi, tool fallback full-text. RLS của document/version/chunk được áp dụng trước khi trả kết quả.
 - Citation tài liệu lưu `document_id`, `version_id` và locator; route mở file kiểm tra lại RLS rồi mới cấp signed URL 60 giây.
 - Audit chỉ lưu trạng thái, model, token và latency; không sao chép câu hỏi, câu trả lời, nội dung chunk hoặc payload tool.
 - `ai_request_ledger` giữ quota dùng chung giữa phân tích khách hàng và hỏi đáp, khóa theo user/ngày Việt Nam để tránh request đồng thời vượt ngưỡng.

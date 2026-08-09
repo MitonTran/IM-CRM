@@ -105,7 +105,7 @@ async function analyzeWithCompatibleProvider(input: { snapshot: unknown; maxOutp
     { role: "user", content: `Phân tích snapshot khách hàng sau:\n${JSON.stringify(input.snapshot)}` },
   ];
 
-  if (config.provider === "gemini") {
+  if (config.provider === "gemini" || config.provider === "groq") {
     const response = await client.chat.completions.parse({
       model: config.model,
       messages,
