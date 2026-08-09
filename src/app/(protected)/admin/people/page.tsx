@@ -14,10 +14,14 @@ const errors: Record<string, string> = {
   "invite-invalid": "Thông tin mời chưa hợp lệ.",
   "team-required": "Leader và Sale cần được gán một team.",
   "invite-failed": "Không thể gửi lời mời. Kiểm tra email hoặc cấu hình máy chủ.",
-  "profile-update": "Đã tạo tài khoản nhưng chưa cập nhật được quyền. Hãy kiểm tra audit và thử lại.",
+  "invite-directory": "Không thể kiểm tra danh sách Auth lúc này. Không có quyền nào được thay đổi.",
+  "invite-exists": "Email này đã thuộc một tài khoản được xác nhận hoặc đang hoạt động.",
+  "invite-integrity": "Kết quả Auth không khớp tài khoản đang phục hồi. Hồ sơ chưa được kích hoạt.",
+  "invite-pending": "Supabase chưa gửi được email. Quyền đã được lưu ở trạng thái chưa kích hoạt; hãy gửi lại cùng email sau ít phút.",
+  "profile-update": "Email có thể đã được gửi nhưng hồ sơ vẫn chưa kích hoạt. Hãy gửi lại cùng thông tin để phục hồi an toàn.",
 };
 
-export default async function PeoplePage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function PeoplePage({ searchParams }: { searchParams: Promise<{ error?: string; status?: string }> }) {
   const supabase = await createClient();
   const { data: claimsData } = await supabase.auth.getClaims();
   const { data: current } = await supabase.from("profiles").select("role,is_active").eq("id", claimsData?.claims?.sub ?? "").single();
@@ -34,6 +38,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
       <div><p className="text-sm font-semibold text-[#708078]">Quản trị hệ thống</p><h1 className="mt-2 text-3xl font-bold tracking-[-.035em]">Nhân sự & team</h1><p className="mt-3 max-w-2xl text-sm leading-6 text-[#718078]">Mời tài khoản, gán vai trò và tổ chức đội ngũ. Mọi thay đổi quyền đều được lưu lịch sử.</p></div>
 
       {params.error && <div role="alert" className="mt-6 flex items-start gap-3 rounded-2xl border border-[#efc9c1] bg-[#fff3f0] p-4 text-sm text-[#8e3e32]"><ShieldAlert className="shrink-0" size={19} />{errors[params.error] ?? "Có lỗi xảy ra."}</div>}
+      {params.status === "invite-sent" && <div role="status" className="mt-6 rounded-2xl border border-[#cfe2d5] bg-[#f0f8f2] p-4 text-sm text-[#35614e]">Email mời đã được gửi và hồ sơ quyền đã được kích hoạt.</div>}
 
       <div className="mt-8 grid gap-5 xl:grid-cols-[.75fr_1.25fr]">
         <section className="card-shadow rounded-[24px] border border-[#e0e7e2] bg-white p-6">
