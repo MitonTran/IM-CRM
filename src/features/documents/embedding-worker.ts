@@ -69,12 +69,10 @@ async function failEmbedding(versionId: string, safeError: string) {
 async function processClaimedEmbedding(row: ClaimedEmbedding): Promise<EmbeddingResult> {
   const admin = createAdminClient();
   try {
-    const chunksQuery = await admin.from("document_chunks")
-      .select("id, content")
-      .eq("document_version_id", row.version_id)
-      .is("embedding", null)
-      .order("chunk_index", { ascending: true })
-      .limit(EMBEDDING_BATCH_SIZE);
+    const chunksQuery = await admin.rpc("get_document_embedding_batch", {
+      target_version_id: row.version_id,
+      max_chunks: EMBEDDING_BATCH_SIZE,
+    });
     if (chunksQuery.error) throw new Error("document_embedding_chunks_unavailable");
     const chunks = (chunksQuery.data ?? []) as ChunkForEmbedding[];
     if (!chunks.length) throw new Error("document_embedding_chunks_empty");

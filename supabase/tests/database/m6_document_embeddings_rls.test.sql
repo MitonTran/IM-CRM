@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(33);
+select plan(36);
 
 select has_extension('vector', 'pgvector extension exists');
 select has_column('public', 'document_chunks', 'embedding', 'Document chunks have an embedding');
@@ -10,6 +10,7 @@ select has_column('public', 'document_chunks', 'embedded_at', 'Document chunks r
 select has_column('public', 'document_versions', 'embedding_status', 'Document versions expose embedding queue status');
 select has_column('public', 'document_versions', 'embedding_attempt_count', 'Document versions bound embedding attempts');
 select has_function('public', 'claim_next_document_embedding', array[]::text[], 'Embedding queue claim RPC exists');
+select has_function('public', 'get_document_embedding_batch', array['uuid','integer'], 'Embedding chunk batch RPC exists');
 select has_function('public', 'store_document_embedding_batch', array['uuid','text','jsonb'], 'Embedding batch RPC exists');
 select has_function('public', 'fail_document_embedding', array['uuid','text'], 'Embedding failure RPC exists');
 select has_function('public', 'retry_document_embedding', array['uuid'], 'Embedding retry RPC exists');
@@ -56,6 +57,7 @@ insert into public.document_chunks(id,document_version_id,chunk_index,content,to
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"e0000000-0000-4000-8000-000000000004","role":"authenticated"}',true);
 select throws_ok($$select public.claim_next_document_embedding()$$,'42501','permission denied for function claim_next_document_embedding','Sale cannot claim embedding work');
+select throws_ok($$select public.get_document_embedding_batch('e3000000-0000-4000-8000-000000000005',64)$$,'42501','permission denied for function get_document_embedding_batch','Sale cannot read the worker chunk batch');
 select throws_ok($$select public.store_document_embedding_batch('e3000000-0000-4000-8000-000000000005','gemini-embedding-001','[]')$$,'42501','permission denied for function store_document_embedding_batch','Sale cannot store embedding vectors');
 select throws_ok($$select public.fail_document_embedding('e3000000-0000-4000-8000-000000000005','Lỗi giả')$$,'42501','permission denied for function fail_document_embedding','Sale cannot change embedding status');
 select results_eq($$select count(*)::bigint from public.search_documents_hybrid('khái niệm không có từ khóa',(array[1::real] || array_fill(0::real,array[1535]))::extensions.vector(1536),10)$$,array[3::bigint],'Sale A hybrid retrieval sees organization, Team A and personal only');
@@ -75,6 +77,7 @@ reset role;
 set local role service_role;
 select set_config('request.jwt.claims','{"role":"service_role"}',true);
 select results_eq($$select version_id from public.claim_next_document_embedding()$$,array['e3000000-0000-4000-8000-000000000005'::uuid],'Service worker claims the pending version');
+select results_eq($$select count(*)::bigint from public.get_document_embedding_batch('e3000000-0000-4000-8000-000000000005',64)$$,array[2::bigint],'Service worker reads only the pending chunk batch');
 select results_eq($$select public.store_document_embedding_batch(
   'e3000000-0000-4000-8000-000000000005','gemini-embedding-001',
   jsonb_build_array(jsonb_build_object('chunk_id','e4000000-0000-4000-8000-000000000005','embedding',to_jsonb(array[1::real] || array_fill(0::real,array[1535]))))
