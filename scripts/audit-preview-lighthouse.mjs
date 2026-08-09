@@ -8,6 +8,7 @@ import { requirePreviewCredentials } from "./audit-preview-performance.mjs";
 import { normalizeBaseUrl } from "./smoke-deployment.mjs";
 
 const DEFAULT_PATHS = ["/login", "/dashboard", "/customers"];
+const RETRIABLE_RUNTIME_ERRORS = new Set(["NO_FCP"]);
 
 export const LIGHTHOUSE_SCORE_BUDGET = Object.freeze({
   performance: 0.7,
@@ -80,6 +81,10 @@ export function summarizeLighthouseResult(route, lhr, budget = LIGHTHOUSE_SCORE_
   };
 }
 
+export function shouldRetryLighthouse(lhr, attempt) {
+  return attempt === 0 && RETRIABLE_RUNTIME_ERRORS.has(lhr.runtimeError?.code);
+}
+
 async function authenticate(context, baseUrl, credentials) {
   const page = await context.newPage();
   try {
@@ -116,23 +121,29 @@ export async function auditPreviewLighthouse(input, options = {}) {
     const results = [];
     for (const route of routes) {
       if (route !== "/login" && credentials) await authenticate(context, baseUrl, credentials);
-      const run = await lighthouse(new URL(route, baseUrl).href, {
-        port: chrome.port,
-        logLevel: "error",
-        output: "json",
-        preset: "desktop",
-        onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
-        disableStorageReset: route !== "/login",
-        maxWaitForLoad: 60_000,
-      });
-      invariant(run?.lhr, `Lighthouse không trả kết quả cho ${route}.`);
-      results.push(summarizeLighthouseResult(route, run.lhr));
+      let lhr;
+      for (let attempt = 0; attempt < 2; attempt += 1) {
+        const run = await lighthouse(new URL(route, baseUrl).href, {
+          port: chrome.port,
+          logLevel: "error",
+          output: "json",
+          preset: "desktop",
+          onlyCategories: ["performance", "accessibility", "best-practices", "seo"],
+          disableStorageReset: route !== "/login",
+          maxWaitForLoad: 60_000,
+        });
+        invariant(run?.lhr, `Lighthouse không trả kết quả cho ${route}.`);
+        lhr = run.lhr;
+        if (!shouldRetryLighthouse(lhr, attempt)) break;
+      }
+      invariant(lhr, `Lighthouse không trả kết quả cho ${route}.`);
+      results.push(summarizeLighthouseResult(route, lhr));
     }
     return {
       status: results.every((route) => route.status === "pass") ? "pass" : "fail",
       checkedAtUtc: new Date().toISOString(),
       baseUrl,
-      methodology: "Lighthouse desktop, one isolated collection per route; authenticated routes reuse a server-created Supabase cookie session",
+      methodology: "Lighthouse desktop, one isolated collection per route with one NO_FCP retry; authenticated routes reuse a server-created Supabase cookie session",
       rawReportsStored: false,
       notes: ["SEO is informational because this internal CRM intentionally sends noindex, nofollow."],
       scoreBudget: LIGHTHOUSE_SCORE_BUDGET,

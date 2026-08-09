@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   LIGHTHOUSE_SCORE_BUDGET,
   normalizeLighthousePaths,
+  shouldRetryLighthouse,
   summarizeLighthouseResult,
 } from "./audit-preview-lighthouse.mjs";
 
@@ -59,5 +60,14 @@ describe("preview Lighthouse summary", () => {
       minimum: LIGHTHOUSE_SCORE_BUDGET.performance,
       pass: false,
     });
+  });
+});
+
+describe("preview Lighthouse runtime retry", () => {
+  it("chỉ retry NO_FCP đúng một lần", () => {
+    expect(shouldRetryLighthouse({ runtimeError: { code: "NO_FCP" } }, 0)).toBe(true);
+    expect(shouldRetryLighthouse({ runtimeError: { code: "NO_FCP" } }, 1)).toBe(false);
+    expect(shouldRetryLighthouse({ runtimeError: { code: "OTHER" } }, 0)).toBe(false);
+    expect(shouldRetryLighthouse({}, 0)).toBe(false);
   });
 });
