@@ -58,9 +58,20 @@ export async function getDocumentsWorkspace(query: DocumentQuery): Promise<Docum
   const selected = query.document ? documents.find((item) => item.id === query.document) ?? null : null;
   let versions: DocumentVersion[] = [];
   if (selected) {
-    const { data, error } = await supabase.from("document_versions").select("id, version_no, original_file_name, mime_type, size_bytes, extraction_status, extraction_error, embedding_status, embedding_error, created_at, profiles!document_versions_uploaded_by_fkey(full_name)").eq("document_id", selected.id).order("version_no", { ascending: false });
+    const { data, error } = await supabase.from("document_versions").select("id, version_no, original_file_name, mime_type, size_bytes, extraction_status, extraction_error, embedding_status, embedding_error, created_at, uploaded_by").eq("document_id", selected.id).order("version_no", { ascending: false });
     if (error) throw new Error(`Không tải được phiên bản: ${error.message}`);
-    versions = (data ?? []).map((item) => { const uploader = item.profiles as unknown as { full_name?: string } | null; return { id: item.id, versionNo: item.version_no, fileName: item.original_file_name, mimeType: item.mime_type, sizeBytes: Number(item.size_bytes), extractionStatus: item.extraction_status as ExtractionStatus, extractionError: item.extraction_error, embeddingStatus: item.embedding_status as EmbeddingStatus, embeddingError: item.embedding_error, createdAt: item.created_at, uploaderName: uploader?.full_name ?? "Thành viên" }; });
+    const uploaderIds = [...new Set((data ?? []).map((item) => item.uploaded_by))];
+    const uploaderResult = uploaderIds.length
+      ? await supabase.from("profiles").select("id, full_name").in("id", uploaderIds)
+      : { data: [] };
+    const uploaderNames = new Map((uploaderResult.data ?? []).map((item) => [item.id, item.full_name]));
+    versions = (data ?? []).map((item) => ({
+      id: item.id, versionNo: item.version_no, fileName: item.original_file_name, mimeType: item.mime_type,
+      sizeBytes: Number(item.size_bytes), extractionStatus: item.extraction_status as ExtractionStatus,
+      extractionError: item.extraction_error, embeddingStatus: item.embedding_status as EmbeddingStatus,
+      embeddingError: item.embedding_error, createdAt: item.created_at,
+      uploaderName: uploaderNames.get(item.uploaded_by) ?? "Thành viên",
+    }));
   }
   return {
     viewer: { id: userId, role, teamId: profile.team_id }, documents, selected, versions,

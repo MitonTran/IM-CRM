@@ -1,9 +1,9 @@
 "use client";
 
 import { useActionState, useRef, useState } from "react";
-import { FileText, FileUp, FolderPlus, LoaderCircle, Trash2, UploadCloud } from "lucide-react";
+import { FileText, FileUp, FolderPlus, LoaderCircle, RefreshCw, Trash2, UploadCloud } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import { createFolderAction, deleteDocumentAction, finalizeDocumentUpload, prepareDocumentUpload, prepareDocumentVersionUpload, processDocumentNowAction } from "./actions";
+import { createFolderAction, deleteDocumentAction, finalizeDocumentUpload, prepareDocumentUpload, prepareDocumentVersionUpload, processDocumentNowAction, retryDocumentEmbeddingAction } from "./actions";
 import type { DocumentOption } from "./types";
 
 const accepted = ".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.webp";
@@ -69,4 +69,9 @@ export function DeleteDocumentForm({ documentId }: { documentId: string }) {
 export function ExtractionActionForm({ versionId, status }: { versionId: string; status: "pending" | "failed" }) {
   const [state, action, pending] = useActionState(processDocumentNowAction, { ok: false, message: "" });
   return <form action={action} className="mt-3"><input type="hidden" name="versionId" value={versionId} /><button disabled={pending} className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#edf3e3] px-3 text-xs font-bold text-[#426043] disabled:opacity-50">{pending ? <LoaderCircle className="animate-spin" size={14} /> : <FileText size={14} />}{pending ? "Đang trích xuất..." : status === "failed" ? "Thử trích xuất lại" : "Trích xuất ngay"}</button>{state.message ? <p aria-live="polite" className={`mt-2 text-xs font-semibold ${state.ok ? "text-emerald-700" : "text-rose-700"}`}>{state.message}</p> : null}</form>;
+}
+
+export function EmbeddingRetryForm({ versionId }: { versionId: string }) {
+  const [state, action, pending] = useActionState(retryDocumentEmbeddingAction, { ok: false, message: "" });
+  return <form action={action} className="mt-3"><input type="hidden" name="versionId" value={versionId} /><button disabled={pending} className="focus-ring inline-flex min-h-9 items-center gap-2 rounded-lg bg-[#f4ead7] px-3 text-xs font-bold text-[#7d5b2a] disabled:opacity-50">{pending ? <LoaderCircle className="animate-spin" size={14} /> : <RefreshCw size={14} />}{pending ? "Đang xếp hàng..." : "Thử lập chỉ mục lại"}</button>{state.message ? <p aria-live="polite" className={`mt-2 text-xs font-semibold ${state.ok ? "text-emerald-700" : "text-rose-700"}`}>{state.message}</p> : null}</form>;
 }
