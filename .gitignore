@@ -9,6 +9,7 @@
 /coverage
 /playwright-report
 /test-results
+/.lighthouseci
 
 # local environment (keep example)
 .env*

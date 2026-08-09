@@ -14,7 +14,7 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -35,6 +35,12 @@ jobs:
           PREVIEW_AUDIT_EMAIL: ${{ secrets.PREVIEW_AUDIT_EMAIL }}
           PREVIEW_AUDIT_PASSWORD: ${{ secrets.PREVIEW_AUDIT_PASSWORD }}
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      - run: npm run audit:preview-lighthouse
+        env:
+          PERFORMANCE_BASE_URL: ${{ inputs.preview_url }}
+          LIGHTHOUSE_REPORT_PATH: test-results/preview-lighthouse.json
+          PREVIEW_AUDIT_EMAIL: ${{ secrets.PREVIEW_AUDIT_EMAIL }}
+          PREVIEW_AUDIT_PASSWORD: ${{ secrets.PREVIEW_AUDIT_PASSWORD }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -42,5 +48,6 @@ jobs:
           path: |
             test-results/deployment-smoke.json
             test-results/preview-performance.json
+            test-results/preview-lighthouse.json
           if-no-files-found: ignore
           retention-days: 14
