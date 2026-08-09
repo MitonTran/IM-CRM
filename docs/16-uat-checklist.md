@@ -25,9 +25,17 @@ Chỉ thực hiện trên Vercel Preview + Supabase Preview bằng dữ liệu g
 | Khách hàng | Pass | Danh sách, bộ lọc, phân trang có nhãn, drawer hồ sơ, timeline, follow-up, deal và công cụ quản trị hiển thị bằng dữ liệu giả; không có lỗi console. |
 | Kho tài liệu | Pass | Tài liệu organization ở trạng thái `Sẵn sàng cho AI`, semantic index sẵn sàng, lịch sử phiên bản và route signed URL hoạt động. |
 | Trợ lý AI | Pass | Provider Groq, quota, token/latency, câu trả lời chỉ đọc và citation tới đúng tài liệu hiển thị; citation mở file private qua Supabase signed URL. |
-| Tài khoản UAT | Blocked | Preview hiện chỉ có Admin và Sale A hoạt động; thiếu Sale B, Leader team A và Leader team B để kiểm tra chéo RLS/quyền. |
+| Tài khoản UAT | Blocked | Sale B/Team B và Leader Team A đã tạo đúng. Lời mời Leader Team B tạo profile chưa kích hoạt nhưng rơi về role Sale, chưa có team; chưa thể kiểm tra chéo RLS/quyền Team B. |
 
 Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài khoản nhiều vai trò, thực hiện các bước ghi bằng dữ liệu giả và người dùng ký duyệt.
+
+### UAT-01 — lời mời lỗi để lại profile mặc định
+
+- Phát hiện lúc `2026-08-09T13:44:20Z` trên Supabase/Vercel Preview; không ảnh hưởng Production.
+- Kỳ vọng: Leader Team B được gán role Leader, Team B và có trạng thái phù hợp sau lời mời.
+- Thực tế: auth user/profile được tạo nhưng profile giữ mặc định `sale`, `team_id = null`, `is_active = false`.
+- Chẩn đoán: trigger `handle_new_auth_user()` chủ động tạo profile mặc định trước; `invitePerson()` chỉ cập nhật role/team sau khi `inviteUserByEmail()` thành công. Nếu bước gửi lời mời lỗi sau khi auth user đã được tạo, action chuyển sang `invite-failed` và bỏ qua profile update, để lại trạng thái một phần.
+- Trạng thái: Blocked. Cần thiết kế luồng invite/recovery idempotent và kiểm thử quyền trước khi sửa profile hoặc tiếp tục UAT nhiều vai trò.
 
 ## Smoke test chung
 
