@@ -21,4 +21,24 @@ Budget áp dụng: TTFB ≤ 2,000 ms, FCP/LCP ≤ 2,500 ms, CLS ≤ 0.1, tổng 
 
 Lần chạy đầu `31305196957` phát hiện race condition khi lấy Playwright storage state sau đăng nhập. Commit trên đã buộc chờ storage state hoàn tất trước khi đóng browser context; lần chạy `31305363447` là regression test end-to-end và đã pass.
 
-Artifact `preview-verification` gồm `deployment-smoke.json` và `preview-performance.json`, được GitHub giữ 14 ngày. Đây là lab evidence; vẫn cần Lighthouse hoặc Speed Insights field data và ký UAT Sale/Leader/Admin/Release owner trước cổng Production.
+Artifact `preview-verification` của phiên này gồm `deployment-smoke.json` và `preview-performance.json`, được GitHub giữ 14 ngày. Lighthouse được bổ sung trong phiên chốt bên dưới; ký UAT Sale/Leader/Admin/Release owner vẫn là cổng bắt buộc trước Production.
+
+## Phiên Lighthouse chốt M7.1
+
+- Commit: `f3d7b698161efeea6c42262aec247853b39c9225` trên nhánh `codex/preview-performance-audit`.
+- GitHub Actions: `https://github.com/MitonTran/IM-CRM/actions/runs/31312097712`.
+- Thời gian hoàn tất Lighthouse: `2026-08-09T12:00:31.729Z`.
+- Phương pháp: Lighthouse desktop, một collection cô lập cho mỗi route; route bảo vệ dùng phiên Supabase Preview do Playwright tạo. Chỉ lỗi runtime `NO_FCP` được thử lại đúng một lần; score thấp không được retry.
+- Guardrail: Performance ≥ 0.70, Accessibility ≥ 0.90 và Best Practices ≥ 0.90.
+
+| Route | Performance | Accessibility | Best Practices | FCP | LCP | TBT | CLS | Kết quả |
+|---|---:|---:|---:|---:|---:|---:|---:|---|
+| `/login` | 0.97 | 1.00 | 1.00 | 1,068 ms | 2,418 ms | 97 ms | 0 | Pass |
+| `/dashboard` | 0.99 | 1.00 | 1.00 | 854 ms | 1,138 ms | 128 ms | 0 | Pass |
+| `/customers` | 0.86 | 1.00 | 1.00 | 840 ms | 1,715 ms | 556 ms | 0 | Pass |
+
+SEO đạt 0.60 và chỉ dùng tham khảo vì CRM nội bộ cố ý gửi `noindex, nofollow`. Bản sửa accessibility đã đóng các audit `label`, `select-name`, `color-contrast` và `link-name`; cả ba route không còn audit accessibility thất bại trong phiên chốt.
+
+Trong cùng workflow, public deployment smoke và Playwright median performance audit cũng pass. Median lab LCP lần lượt là 216 ms, 1,944 ms và 1,128 ms cho `/login`, `/dashboard`, `/customers`; toàn bộ budget TTFB/FCP/LCP/CLS/transfer đều đạt.
+
+Artifact `preview-verification` gồm ba report số đã khử dữ liệu nhạy cảm: `deployment-smoke.json`, `preview-performance.json`, `preview-lighthouse.json`; không lưu raw Lighthouse report, DOM, email hoặc mật khẩu và được giữ 14 ngày. Phần automation của cổng performance M7.1 đã hoàn tất; ký UAT Sale/Leader/Admin/Release owner vẫn bắt buộc trước Production.

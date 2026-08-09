@@ -65,7 +65,7 @@ Chỉ thực hiện trên Vercel Preview + Supabase Preview bằng dữ liệu g
 - [ ] Log Vercel/Supabase không có lỗi nghiêm trọng, PII hoặc secret.
 - [ ] Upload 25 MB bị giới hạn đúng; request AI/file không treo vô hạn.
 
-Bằng chứng automation ngày 2026-08-09 nằm tại `docs/18-preview-performance-evidence.md`. Các ô trên vẫn để trống cho đến khi được đối chiếu trong một phiên UAT có người thực hiện và thông tin phiên đầy đủ.
+Bằng chứng automation ngày 2026-08-09 nằm tại `docs/18-preview-performance-evidence.md`; workflow chốt `31312097712` đã pass smoke, Playwright performance và Lighthouse cho cả ba route, với Accessibility `1.00`. Các ô trên vẫn để trống cho đến khi được đối chiếu trong một phiên UAT có người thực hiện và thông tin phiên đầy đủ.
 
 ## Ký duyệt
 
