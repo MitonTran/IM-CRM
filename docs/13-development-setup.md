@@ -69,7 +69,7 @@ where id = '<UUID_ADMIN>';
 
 Không đưa email, mật khẩu hoặc UUID thật vào migration/seed/repository. Sau bootstrap, Admin mời các thành viên khác trong màn hình “Nhân sự & team”.
 
-Email mời và email khôi phục phải đưa người dùng qua `/auth/confirm` hoặc `/auth/callback`, sau đó tới `/auth/update-password`. Màn hình đăng nhập có liên kết “Quên mật khẩu”; phản hồi gửi email luôn dùng thông báo chung để không tiết lộ tài khoản có tồn tại. Với email template mặc định, thêm URL `/auth/callback?next=/auth/update-password` vào Redirect URLs và mở email trong cùng trình duyệt đã yêu cầu khôi phục để hoàn tất PKCE.
+Email mời và email khôi phục phải đưa người dùng qua `/auth/confirm` hoặc `/auth/callback`, sau đó tới `/auth/update-password`. Màn hình đăng nhập có liên kết “Quên mật khẩu”; phản hồi gửi email luôn dùng thông báo chung để không tiết lộ tài khoản có tồn tại. Server Action tạo liên kết từ HTTPS origin của chính request khi `Origin` khớp `Host`/`X-Forwarded-Host`; `NEXT_PUBLIC_APP_URL` chỉ là fallback an toàn. Với email template mặc định, thêm cả `/auth/callback` và `/auth/callback?next=/auth/update-password` của từng hostname UAT vào Supabase Redirect URLs, rồi mở email trong cùng trình duyệt đã yêu cầu khôi phục để hoàn tất PKCE. Không dùng một hostname để yêu cầu recovery rồi mở callback ở hostname khác.
 
 Khi đã cấu hình custom SMTP và Dashboard cho phép sửa Auth Email Templates, ưu tiên liên kết token-hash phía server cho Invite user và Reset password để người dùng có thể mở email ở trình duyệt khác:
 

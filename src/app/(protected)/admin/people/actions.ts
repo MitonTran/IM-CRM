@@ -1,9 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { findAuthUserByEmail, isRecoverableInvitationAccount, normalizeInvitationEmail } from "@/features/admin/invitation-recovery";
+import { resolveAuthRedirectOrigin } from "@/features/auth/origin";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
@@ -72,7 +74,7 @@ export async function invitePerson(formData: FormData) {
     if (prepareError) redirect("/admin/people?error=profile-update");
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = resolveAuthRedirectOrigin(await headers(), process.env.NEXT_PUBLIC_APP_URL);
   const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${appUrl}/auth/callback?next=/auth/update-password`,
     data: { full_name: parsed.data.fullName },

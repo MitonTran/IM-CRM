@@ -52,6 +52,15 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Restore drill: local run pass backup/restore isolated/fixture/migration/count/RLS và đã tự xóa database disposable; database job của workflow trên cũng pass và lưu artifact `restore-drill-report` 14 ngày.
 - Giới hạn: chưa gửi email recovery thật và chưa đổi mật khẩu tài khoản UAT Preview trong phiên hỗ trợ này. Người dùng vẫn cần hoàn tất invite/recovery trong email để thực hiện checklist đăng nhập chéo và ký duyệt.
 
+### UAT-02 — recovery Preview chuyển sang sai hostname
+
+- Phát hiện khi người dùng thử “Quên mật khẩu” cho Sale A và Sale B trên Vercel Preview; callback trả `recovery-expired`.
+- Nguyên nhân: biến Preview `NEXT_PUBLIC_APP_URL` cố định ở `https://crm.ieltsmentor.io.vn`, trong khi phiên PKCE được tạo trên hostname Vercel Preview. Email chuyển callback sang domain CRM nên trình duyệt không gửi code verifier cookie của hostname ban đầu.
+- Khắc phục code: recovery và invitation lấy HTTPS origin của chính Server Action khi `Origin` khớp `Host`/`X-Forwarded-Host`; chỉ cho phép HTTP ở localhost và chỉ dùng `NEXT_PUBLIC_APP_URL` làm fallback đã kiểm tra.
+- Khắc phục cấu hình lúc `2026-08-09T15:49:11Z`: Supabase Preview ref `mhnvjuppwyoqibhtevhv` đã thêm hai Redirect URLs `/auth/callback` và `/auth/callback?next=/auth/update-password` cho hostname UAT `im-crm-git-codex-preview-p-2d339c-…vercel.app`. Không thay đổi Site URL hoặc Production.
+- Kiểm tra cục bộ: lint `Pass`, typecheck `Pass`, unit `89/89`, production build `Pass`; unit mới bao phủ Preview same-origin, local HTTP, origin độc hại/sai host và fallback an toàn.
+- Trạng thái: chờ Vercel deploy commit sửa và người dùng yêu cầu một email recovery mới trong cùng trình duyệt để xác nhận live flow; link cũ đã dùng/hết hạn không được tái sử dụng.
+
 ## Smoke test chung
 
 - [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
