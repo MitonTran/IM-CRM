@@ -139,6 +139,15 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Kho tài liệu chỉ hiển thị tài liệu phạm vi toàn công ty. UUID tài liệu Team A không mở chi tiết, không xuất hiện công cụ preview/version và route tải trực tiếp không chuyển phiên sang Supabase signed URL. Database/RLS test bổ sung vẫn bao phủ từ chối `record_document_download` và Storage path ngoài team.
 - Commit bằng chứng Leader A `96d9cee` đã pass Quality workflow `31407223515`. Trạng thái UAT-10: `Pass` cho cô lập khách/task/deal/KPI/tài liệu bằng danh sách, UUID, filter và URL trực tiếp. Production chưa thay đổi.
 
+### UAT-11 — Admin toàn hệ thống, nhân sự, tài liệu và AI
+
+- Xác nhận live lúc `2026-08-10T16:18:15Z` trên branch alias Preview bằng phiên Admin; chỉ đọc và không khóa, đổi role/team hoặc xóa dữ liệu trong phiên này.
+- Dashboard Admin có filter mọi team, Sale và nguồn; leaderboard liệt kê Sale A/Sale B. Doanh thu toàn hệ thống là `25.500.000 VND`, khớp một bản Active; trang giao dịch vẫn hiển thị đủ bản nguồn `25.000.000 VND` đã vô hiệu và bản điều chỉnh Active mà không cộng trùng. Danh sách khách có `2` bản ghi và facet chứa cả Team A/Team B.
+- Trang Nhân sự & team hiển thị đúng `2` team và `5` tài khoản, mỗi thành viên có email Auth cạnh họ tên. Role/team đúng với Admin, Sale A/B và Leader A/B; Admin hiện tại bị khóa control role/team/status và chỉ được đổi tên. Guardrail khóa mềm, đổi tên và audit đã pass UAT-05 cùng E2E/database trước đó.
+- Kho tài liệu Admin thấy cả tài liệu toàn công ty và fixture Team A, có selector organization/team/user, version history và signed URL private. Fixture Team A đã trích xuất `Sẵn sàng cho AI` nhưng semantic index vẫn `pending` tại thời điểm kiểm tra, cần được theo dõi trong cổng vận hành.
+- Trợ lý AI hiển thị Groq, quota `20/20`, lịch sử hội thoại, model/token/latency và citation tới đúng PDF private; citation mở thành công qua Supabase signed URL. Không có lỗi console trong lần kiểm tra.
+- Commit bằng chứng Leader B `cdde8cb` đã pass Quality workflow `31407763779`. Trạng thái UAT-11: phạm vi đọc Admin, email/guardrail nhân sự, KPI/deal history, tài liệu và AI citation `Pass`; khóa user live, semantic worker, timeout/fallback và fixture user-scope vẫn thuộc các cổng vận hành/negative test còn lại. Production chưa thay đổi.
+
 ## Smoke test chung
 
 - [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
@@ -178,9 +187,9 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 
 ## Admin
 
-- [ ] Thấy toàn hệ thống và trang Nhân sự & team.
-- [ ] Mỗi thành viên hiển thị đúng email đăng nhập Auth cạnh họ tên; không hiển thị email ngoài trang Admin.
-- [ ] Mời/kích hoạt/khóa user, đổi role/team đúng validation và có audit.
+- [x] Thấy toàn hệ thống và trang Nhân sự & team.
+- [x] Mỗi thành viên hiển thị đúng email đăng nhập Auth cạnh họ tên; không hiển thị email ngoài trang Admin.
+- [x] Mời/kích hoạt/khóa user, đổi role/team đúng validation và có audit.
 - [ ] User bị khóa mất quyền; không thể tự mở lại từ client.
 - [ ] Dashboard all/team/user, KPI VND và void/deleted/late-entry khớp dữ liệu nguồn.
 - [ ] Tài liệu organization/team/user, version, signed URL và extraction status hoạt động.
