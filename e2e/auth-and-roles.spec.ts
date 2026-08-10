@@ -115,7 +115,9 @@ test("Admin thấy toàn hệ thống và trang nhân sự", async ({ page }) =>
   await expect(page.getByText(E2E_CUSTOMERS.unassignedA.name, { exact: true })).toBeVisible();
   await page.goto("/admin/people");
   await expect(page.getByRole("heading", { name: "Nhân sự & team" })).toBeVisible();
-  await expect(page.getByRole("article", { name: `Quản lý thành viên ${E2E_USERS.saleB.fullName}` })).toBeVisible();
+  const saleBCard = page.getByRole("article", { name: `Quản lý thành viên ${E2E_USERS.saleB.fullName}` });
+  await expect(saleBCard).toBeVisible();
+  await expect(saleBCard.getByText(E2E_USERS.saleB.email)).toBeVisible();
 
   const renamedTeam = "Team Trống Đã Đổi E2E";
   const teamCard = page.getByRole("article", { name: `Quản lý team ${E2E_TEAMS.empty.name}` });

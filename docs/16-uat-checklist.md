@@ -131,6 +131,7 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 ## Admin
 
 - [ ] Thấy toàn hệ thống và trang Nhân sự & team.
+- [ ] Mỗi thành viên hiển thị đúng email đăng nhập Auth cạnh họ tên; không hiển thị email ngoài trang Admin.
 - [ ] Mời/kích hoạt/khóa user, đổi role/team đúng validation và có audit.
 - [ ] User bị khóa mất quyền; không thể tự mở lại từ client.
 - [ ] Dashboard all/team/user, KPI VND và void/deleted/late-entry khớp dữ liệu nguồn.

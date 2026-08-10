@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   findAuthUserByEmail,
   isRecoverableInvitationAccount,
+  listAuthUserEmails,
   normalizeInvitationEmail,
 } from "./invitation-recovery";
 
@@ -42,6 +43,23 @@ describe("invitation recovery", () => {
   it("maps directory failures to a safe internal error", async () => {
     const listUsers = vi.fn(async () => ({ data: { users: [] }, error: new Error("provider detail") }));
     await expect(findAuthUserByEmail(listUsers, "user@example.com")).rejects.toThrow("auth_directory_unavailable");
+  });
+
+  it("builds a minimal email directory across every Auth page", async () => {
+    const listUsers = vi.fn(async ({ page }: { page: number; perPage: number }) => page === 1
+      ? { data: { users: [user("one", "one@example.com"), user("without-email", "")], total: 3, nextPage: 2 }, error: null }
+      : { data: { users: [user("two", "two+uat@example.com")], total: 3, nextPage: null }, error: null });
+
+    await expect(listAuthUserEmails(listUsers, { perPage: 2 })).resolves.toEqual({
+      one: "one@example.com",
+      two: "two+uat@example.com",
+    });
+    expect(listUsers).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not expose provider details when listing the email directory fails", async () => {
+    const listUsers = vi.fn(async () => ({ data: { users: [] }, error: new Error("sensitive provider detail") }));
+    await expect(listAuthUserEmails(listUsers)).rejects.toThrow("auth_directory_unavailable");
   });
 
   it("only recovers an unconfirmed, unsigned-in, inactive account", () => {

@@ -45,3 +45,27 @@ export async function findAuthUserByEmail(
 
   throw new Error("auth_directory_limit_exceeded");
 }
+
+export async function listAuthUserEmails(
+  listUsers: ListUsers,
+  options: { perPage?: number; maxPages?: number } = {},
+) {
+  const perPage = options.perPage ?? 1000;
+  const maxPages = options.maxPages ?? 100;
+  const emailsByUserId: Record<string, string> = {};
+
+  for (let page = 1; page <= maxPages; page += 1) {
+    const { data, error } = await listUsers({ page, perPage });
+    if (error) throw new Error("auth_directory_unavailable");
+
+    for (const user of data.users) {
+      const email = user.email?.trim();
+      if (email) emailsByUserId[user.id] = email;
+    }
+
+    const reachedTotal = typeof data.total === "number" && data.total > 0 && page * perPage >= data.total;
+    if (data.users.length < perPage || data.nextPage === null || reachedTotal) return emailsByUserId;
+  }
+
+  throw new Error("auth_directory_limit_exceeded");
+}

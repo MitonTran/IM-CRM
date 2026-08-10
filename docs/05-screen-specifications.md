@@ -17,7 +17,7 @@ Mọi màn hình có skeleton/loading, lỗi có mã tham chiếu và nút thử
 | Chi tiết tài liệu | theo scope | metadata, preview, version, quyền, trạng thái trích xuất | tải, tạo version, reprocess nếu có quyền | version | preview không hỗ trợ thì tải; lỗi xử lý rõ |
 | AI phân tích khách | theo quyền khách | snapshot time, summary, score, objections, actions | chạy lại, copy gợi ý | phiên bản phân tích | cảnh báo thiếu dữ liệu/AI hỗ trợ |
 | AI hỏi đáp | authenticated | hội thoại, câu trả lời, citations, usage tùy quyền | hỏi, mở nguồn, phản hồi | phạm vi thời gian/team theo quyền | câu hỏi mẫu; trạng thái không đủ dữ liệu |
-| Quản trị user/team | Admin | user, role, team, trạng thái | mời, đổi tên, khóa/kích hoạt user, đổi role/team; tạo, đổi tên, ngừng/kích hoạt team | team/role/status | CTA mời; cảnh báo và chặn khi còn member, khách hoặc task mở; không xóa cứng |
+| Quản trị user/team | Admin | họ tên, email đăng nhập từ Auth, role, team, trạng thái | mời, đổi tên, khóa/kích hoạt user, đổi role/team; tạo, đổi tên, ngừng/kích hoạt team | team/role/status | CTA mời; cảnh báo và chặn khi còn member, khách hoặc task mở; không xóa cứng |
 | Audit | Admin | actor, action, entity, thời gian, diff an toàn | xem chi tiết/xuất sau MVP | thời gian, actor, entity, action | không log; payload lỗi được che |
 
 ## Form khách hàng tối thiểu

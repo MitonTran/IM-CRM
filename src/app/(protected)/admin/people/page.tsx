@@ -2,6 +2,7 @@ import { MailPlus, Plus, Power, PowerOff, Save, ShieldAlert, UserRoundCog, Users
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { loadAuthEmailDirectory } from "@/features/admin/auth-directory";
 import { createClient } from "@/lib/supabase/server";
 import { createTeam, invitePerson, managePerson, manageTeam } from "./actions";
 
@@ -49,10 +50,11 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   const { data: current } = await supabase.from("profiles").select("role,is_active").eq("id", currentUserId).single();
   if (current?.role !== "admin" || !current.is_active) redirect("/dashboard");
 
-  const [{ data: teams }, { data: profiles }, params] = await Promise.all([
+  const [{ data: teams }, { data: profiles }, params, authDirectory] = await Promise.all([
     supabase.from("teams").select("id,name,is_active").order("name"),
     supabase.from("profiles").select("id,full_name,role,is_active,team_id,team:teams!profiles_team_id_fkey(name)").order("full_name"),
     searchParams,
+    loadAuthEmailDirectory(),
   ]);
   const allTeams = teams ?? [];
   const activeTeams = allTeams.filter((team) => team.is_active);
@@ -137,17 +139,26 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
 
       <section className="mt-5 overflow-hidden rounded-[24px] border border-[#e0e7e2] bg-white">
         <div className="flex items-center gap-3 border-b border-[#e6ece8] px-6 py-5"><UsersRound size={19} className="text-[#35614e]" /><h2 className="font-bold">Thành viên ({profiles?.length ?? 0})</h2></div>
+        {!authDirectory.available && (
+          <p role="status" className="border-b border-[#f0dfbc] bg-[#fff9ec] px-6 py-3 text-xs text-[#805f22]">
+            Email đăng nhập tạm thời chưa tải được; các thao tác quản trị khác vẫn hoạt động.
+          </p>
+        )}
         <div className="divide-y divide-[#edf1ee]">
           {(profiles ?? []).map((person) => {
             const isSelf = person.id === currentUserId;
+            const authEmail = authDirectory.emails[person.id];
             return (
               <article key={person.id} aria-label={`Quản lý thành viên ${person.full_name}`} className="p-5">
                 <form action={managePerson} className="grid gap-4 lg:grid-cols-[1.15fr_.8fr_1fr_auto] lg:items-end">
                   <input type="hidden" name="userId" value={person.id} />
                   <input type="hidden" name="isActive" value={String(person.is_active)} />
                   <label className="text-xs font-bold uppercase tracking-[.08em] text-[#7d8a83]">
-                    Họ tên thành viên
-                    <Input className="mt-2 normal-case tracking-normal text-[#17251e]" name="fullName" required minLength={2} maxLength={120} defaultValue={person.full_name} />
+                    <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                      <span>Họ tên thành viên</span>
+                      <span className="break-all font-medium normal-case tracking-normal text-[#607169]">— {authEmail ?? "Chưa có email Auth"}</span>
+                    </span>
+                    <Input aria-label="Họ tên thành viên" className="mt-2 normal-case tracking-normal text-[#17251e]" name="fullName" required minLength={2} maxLength={120} defaultValue={person.full_name} />
                   </label>
                   <label className="text-xs font-bold uppercase tracking-[.08em] text-[#7d8a83]">
                     Vai trò
