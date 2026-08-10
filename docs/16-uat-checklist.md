@@ -148,10 +148,19 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Trợ lý AI hiển thị Groq, quota `20/20`, lịch sử hội thoại, model/token/latency và citation tới đúng PDF private; citation mở thành công qua Supabase signed URL. Không có lỗi console trong lần kiểm tra.
 - Commit bằng chứng Leader B `cdde8cb` đã pass Quality workflow `31407763779`. Trạng thái UAT-11: phạm vi đọc Admin, email/guardrail nhân sự, KPI/deal history, tài liệu và AI citation `Pass`; khóa user live, semantic worker, timeout/fallback và fixture user-scope vẫn thuộc các cổng vận hành/negative test còn lại. Production chưa thay đổi.
 
+### UAT-12 — cổng vận hành Preview sau UAT năm vai trò
+
+- Workflow `Preview smoke` run `31408335438` hoàn tất `Pass` ngày 2026-08-10. Public smoke xác nhận `/api/health`, nội dung `/login`, security headers và response budget; route bảo vệ dùng credential UAT chỉ lưu trong GitHub Actions secrets.
+- Playwright performance đạt toàn bộ budget. Median `/login`: TTFB `14 ms`, FCP/LCP `188 ms`, CLS `0`; `/dashboard`: TTFB `15 ms`, FCP `600 ms`, LCP `2.052 ms`, CLS `0,0121`; `/customers`: TTFB `14 ms`, FCP `840 ms`, LCP `1.348 ms`, CLS `0,0022`.
+- Lighthouse đạt guardrail trên cả ba route. Performance lần lượt `/login` `0,98`, `/dashboard` `0,84`, `/customers` `0,99`; Accessibility và Best Practices đều `1,00`. SEO `0,60` là dự kiến vì CRM nội bộ gửi `noindex`.
+- Artifact `preview-verification` chứa ba report số đã khử credential: `deployment-smoke.json`, `preview-performance.json`, `preview-lighthouse.json`; không lưu raw DOM, email hoặc mật khẩu.
+- Đối chiếu log Vercel trong 30 phút gần phiên chạy: `0` warning, `0` error, `0` fatal; các request ứng dụng quan sát được trả `200`, ngoài `/robots.txt` `404` dự kiến do Lighthouse. Truy vấn Supabase Logs trong cửa sổ `Last hour` không có API Gateway event `500/502/503/504`. Chỉ các cột thời gian, nguồn và thông điệp sự kiện đã được dùng làm bằng chứng; không chép metadata nền tảng, định danh người dùng, PII hoặc secret vào tài liệu.
+- Trạng thái: automation hiệu năng và quan sát lỗi nghiêm trọng `Pass` trên Preview. Production chưa thay đổi; upload giới hạn `25 MB`, AI/file timeout/fallback và semantic worker vẫn cần negative test riêng.
+
 ## Smoke test chung
 
-- [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
-- [ ] `/login` có CSP nonce, chặn frame/object; không lộ header nền tảng/secret.
+- [x] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
+- [x] `/login` có CSP nonce, chặn frame/object; không lộ header nền tảng/secret.
 - [ ] Sai email/mật khẩu trả thông báo chung; user khóa không vào CRM.
 - [ ] Đăng xuất hủy phiên; URL bảo vệ quay về login.
 - [ ] Mobile và desktop không vỡ layout; keyboard focus nhìn thấy; loading/empty/error state đọc được.
@@ -197,13 +206,13 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 
 ## Performance và quan sát
 
-- [ ] Playwright performance budget trong CI đạt.
-- [ ] Workflow `Preview smoke` đạt và artifact `preview-performance.json` cho `/login`, `/dashboard`, `/customers` đã được lưu.
-- [ ] Lighthouse/Speed Insights Preview cho `/login`, `/dashboard`, `/customers` đã lưu kết quả; không có hồi quy nghiêm trọng.
-- [ ] Log Vercel/Supabase không có lỗi nghiêm trọng, PII hoặc secret.
+- [x] Playwright performance budget trong CI đạt.
+- [x] Workflow `Preview smoke` đạt và artifact `preview-performance.json` cho `/login`, `/dashboard`, `/customers` đã được lưu.
+- [x] Lighthouse/Speed Insights Preview cho `/login`, `/dashboard`, `/customers` đã lưu kết quả; không có hồi quy nghiêm trọng.
+- [x] Log Vercel/Supabase không có lỗi nghiêm trọng, PII hoặc secret trong các trường bằng chứng đã kiểm tra.
 - [ ] Upload 25 MB bị giới hạn đúng; request AI/file không treo vô hạn.
 
-Bằng chứng automation ngày 2026-08-09 nằm tại `docs/18-preview-performance-evidence.md`; workflow chốt `31312097712` đã pass smoke, Playwright performance và Lighthouse cho cả ba route, với Accessibility `1.00`. Các ô trên vẫn để trống cho đến khi được đối chiếu trong một phiên UAT có người thực hiện và thông tin phiên đầy đủ.
+Bằng chứng automation ngày 2026-08-09 và phiên chốt sau UAT ngày 2026-08-10 nằm tại `docs/18-preview-performance-evidence.md`. Workflow mới nhất `31408335438` đã pass smoke, Playwright performance và Lighthouse cho cả ba route, với Accessibility `1,00`; log Vercel/Supabase cũng đã được đối chiếu theo UAT-12.
 
 ## Ký duyệt
 

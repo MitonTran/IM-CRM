@@ -66,3 +66,31 @@ Artifact `preview-verification` gồm ba report số đã khử dữ liệu nh�
 Lần chạy `31319754678` ngay trước đó có public smoke, `/login` và `/customers` pass nhưng median LCP `/dashboard` là `2,624 ms`, vượt budget `124 ms`; TTFB `13 ms`, FCP `640 ms`, CLS `0.0122` và transfer vẫn đạt. Không có thay đổi dashboard trong chuỗi tích hợp, nên workflow được chạy lại đúng một lần để phân loại nhiễu Preview. Lần chốt ở trên đưa dashboard LCP về `2,012 ms` và toàn bộ Lighthouse pass; không nới budget và không sửa code theo một mẫu không lặp lại.
 
 Artifact `preview-verification` của phiên chốt chứa đủ ba report đã khử credential và được giữ 14 ngày. Production không thay đổi; cổng còn lại vẫn là UAT đăng nhập chéo và ký duyệt nhiều vai trò.
+
+## Phiên chốt vận hành sau UAT năm vai trò ngày 2026-08-10
+
+- Commit: `79445d5` trên nhánh `codex/preview-performance-audit`.
+- Vercel Preview: `https://im-crm-git-codex-preview-p-2d339c-thongtmmmd-gmailcoms-projects.vercel.app`.
+- GitHub Actions: `https://github.com/MitonTran/IM-CRM/actions/runs/31408335438`.
+- Public smoke hoàn tất lúc `2026-08-10T16:19:56.963Z`; toàn workflow hoàn tất `Pass` sau `2m15s`.
+- Phương pháp: public deployment smoke, Playwright Chromium với phiên Admin UAT, sau đó Lighthouse desktop độc lập cho từng route. Credential chỉ nằm trong GitHub Actions secrets.
+
+Public smoke đạt `/api/health`, nội dung `/login`, CSP/security headers và response budget; health mất `594 ms`, login mất `441 ms` và deployment không yêu cầu protection bypass.
+
+| Route | TTFB | FCP | LCP | CLS | Kết quả |
+|---|---:|---:|---:|---:|---|
+| `/login` | 14 ms | 188 ms | 188 ms | 0 | Pass |
+| `/dashboard` | 15 ms | 600 ms | 2.052 ms | 0,0121 | Pass |
+| `/customers` | 14 ms | 840 ms | 1.348 ms | 0,0022 | Pass |
+
+| Route | Performance | Accessibility | Best Practices | LCP | TBT | Kết quả |
+|---|---:|---:|---:|---:|---:|---|
+| `/login` | 0,98 | 1,00 | 1,00 | 2.436 ms | — | Pass |
+| `/dashboard` | 0,84 | 1,00 | 1,00 | 1.103 ms | 642 ms | Pass |
+| `/customers` | 0,99 | 1,00 | 1,00 | 1.714 ms | — | Pass |
+
+SEO đạt `0,60` và chỉ dùng tham khảo vì CRM nội bộ chủ động gửi `noindex`. Dashboard có TBT `642 ms` nhưng Performance `0,84`, LCP `1.103 ms` và toàn bộ guardrail vẫn đạt; không nới budget.
+
+Artifact `preview-verification` gồm `deployment-smoke.json`, `preview-performance.json` và `preview-lighthouse.json`, đã khử credential và được GitHub giữ theo cấu hình workflow. Đối chiếu Vercel Logs trong 30 phút gần phiên chạy ghi nhận `0` warning, `0` error, `0` fatal; `/robots.txt` `404` là request dự kiến từ Lighthouse. Truy vấn Supabase Logs trong cửa sổ `Last hour` không tìm thấy API Gateway event `500/502/503/504`. Không chép metadata nền tảng, định danh, PII hoặc secret vào bằng chứng này.
+
+Kết luận: cổng smoke, performance, Lighthouse và quan sát lỗi nghiêm trọng đã `Pass` trên Preview sau UAT năm vai trò. Production không thay đổi. Các negative test upload `25 MB`, timeout/fallback AI/file và semantic worker tiếp tục được theo dõi riêng trước ký duyệt Production.
