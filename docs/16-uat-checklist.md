@@ -131,6 +131,14 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Fixture Team A đã sẵn sàng để quay lại phiên Sale B kiểm tra danh sách, UUID và signed route đều bị chặn. Kiểm tra Leader A không thấy/chỉnh Team B vẫn cần fixture Team B do Leader B tạo ở cổng tiếp theo.
 - Commit bằng chứng Sale B `627eaa1` đã pass Quality workflow `31404315892`. Trạng thái UAT-09: Dashboard/target, giới hạn Admin và quản lý tài liệu Team A `Pass`; transfer live và đối chiếu tài liệu hai chiều còn chờ fixture/tài khoản tương ứng. Production chưa thay đổi.
 
+### UAT-10 — Leader Team B không đọc chéo Team A
+
+- Xác nhận live lúc `2026-08-10T16:11:56Z` trên branch alias Preview. Người dùng dự định đăng nhập Sale B nhưng phiên thực tế được UI xác định là Leader Team B; vì vậy chỉ thực hiện kiểm tra đọc đúng vai trò này và không tạo/sửa dữ liệu.
+- Dashboard Leader B cố định Team B, chỉ liệt kê Sale B và toàn bộ KPI bằng `0`; không rò doanh thu `25.500.000 VND`, khách hoặc phễu Team A. Danh sách khách và task đều `0`, facet chỉ chứa Sale B / Team B.
+- Mở trực tiếp UUID khách Team A trả “Bản ghi không tồn tại hoặc bạn không có quyền xem”. Gắn UUID Team A vào filter khách và giao dịch vẫn trả `0` khách, `0` giao dịch và `0 VND`; option UI vẫn chỉ có Team B.
+- Kho tài liệu chỉ hiển thị tài liệu phạm vi toàn công ty. UUID tài liệu Team A không mở chi tiết, không xuất hiện công cụ preview/version và route tải trực tiếp không chuyển phiên sang Supabase signed URL. Database/RLS test bổ sung vẫn bao phủ từ chối `record_document_download` và Storage path ngoài team.
+- Commit bằng chứng Leader A `96d9cee` đã pass Quality workflow `31407223515`. Trạng thái UAT-10: `Pass` cho cô lập khách/task/deal/KPI/tài liệu bằng danh sách, UUID, filter và URL trực tiếp. Production chưa thay đổi.
+
 ## Smoke test chung
 
 - [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
@@ -165,8 +173,8 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 
 ## Leader team B (kiểm tra chéo)
 
-- [ ] Không đọc khách, task, deal, KPI hoặc tài liệu team A.
-- [ ] UUID, filter query và URL trực tiếp không tạo đường vòng RLS.
+- [x] Không đọc khách, task, deal, KPI hoặc tài liệu team A.
+- [x] UUID, filter query và URL trực tiếp không tạo đường vòng RLS.
 
 ## Admin
 
