@@ -93,6 +93,39 @@ test("Sale chỉ thấy khách được giao cho mình và không vào trang qu�
   await expect(page).toHaveURL(/\/dashboard/);
 });
 
+test("Sale điều chỉnh giao dịch trong 24 giờ mà không làm trùng doanh thu", async ({ page }) => {
+  await login(page, E2E_USERS.saleA.email);
+  await page.goto(`/customers?customer=${E2E_CUSTOMERS.saleA.id}`);
+  await expect(page.getByRole("dialog", { name: E2E_CUSTOMERS.saleA.name })).toBeVisible();
+
+  const registration = page.locator("details").filter({ has: page.getByText("Ghi nhận đăng ký mới", { exact: true }) });
+  await registration.getByText("Ghi nhận đăng ký mới", { exact: true }).click();
+  await registration.locator('input[name="amountVnd"]').fill("1000000");
+  await registration.locator('textarea[name="note"]').fill("Giao dịch gốc E2E");
+  await registration.getByRole("button", { name: "Ghi nhận giao dịch" }).click();
+  await expect(registration.getByRole("status")).toHaveText("Đã ghi nhận giao dịch.");
+  await expect(page.getByText("1.000.000 ₫", { exact: true }).first()).toBeVisible();
+
+  const amendment = page.locator("details").filter({ has: page.getByText("Chỉnh sửa giao dịch", { exact: true }) });
+  await amendment.getByText("Chỉnh sửa giao dịch", { exact: true }).click();
+  await amendment.locator('input[name="amountVnd"]').fill("1250000");
+  await amendment.locator('input[name="reason"]').fill("Nhập sai số tiền E2E");
+  await amendment.getByRole("button", { name: "Lưu bản điều chỉnh" }).click();
+  await expect(page.getByText("Đã điều chỉnh giao dịch và giữ lại bản cũ trong lịch sử.", { exact: true })).toBeVisible();
+
+  await expect(page.getByText("1.250.000 ₫", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("1.000.000 ₫", { exact: true })).toBeVisible();
+  await expect(page.getByText("Bản điều chỉnh", { exact: true })).toBeVisible();
+  await expect(page.getByText("Đã vô hiệu", { exact: true })).toBeVisible();
+  await expect(page.getByText("Lý do vô hiệu: Nhập sai số tiền E2E", { exact: true })).toBeVisible();
+  await expect(page.getByText("Vô hiệu hóa giao dịch", { exact: true })).toHaveCount(0);
+
+  await page.reload();
+  await expect(page.getByText("1.250.000 ₫", { exact: true }).first()).toBeVisible();
+  await expect(page.getByText("Bản điều chỉnh", { exact: true })).toBeVisible();
+  await expect(page.getByText("Active", { exact: true })).toHaveCount(1);
+});
+
 test("Leader thấy đúng dữ liệu team và các dashboard quản lý", async ({ page }) => {
   await login(page, E2E_USERS.leaderA.email);
   await expect(page.getByText(E2E_USERS.leaderA.fullName, { exact: true })).toBeVisible();

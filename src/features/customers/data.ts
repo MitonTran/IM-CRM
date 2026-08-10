@@ -84,7 +84,7 @@ export async function getCustomerDetail(customerId: string): Promise<CustomerDet
   const [activityResult, taskResult, dealResult, aiResult, aiSettingsResult] = await Promise.all([
     supabase.from("activities").select("id, type, outcome, content, occurred_at, next_action, follow_up_at, is_late_entry, profiles!activities_performed_by_fkey(full_name)").eq("customer_id", customerId).is("deleted_at", null).order("occurred_at", { ascending: false }).limit(50),
     supabase.from("follow_up_tasks").select("id, due_at, status, priority, completion_reason, profiles!follow_up_tasks_assignee_user_id_fkey(full_name), activities!follow_up_tasks_activity_id_fkey(next_action)").eq("customer_id", customerId).order("due_at", { ascending: true }).limit(30),
-    supabase.from("deals").select("id, customer_id, amount_vnd, registered_at, status, note, void_reason, profiles!deals_owner_user_id_fkey(full_name), teams(name)").eq("customer_id", customerId).order("registered_at", { ascending: false }).limit(30),
+    supabase.from("deals").select("id, customer_id, amount_vnd, registered_at, status, note, void_reason, created_at, created_by, replaces_deal_id, amendment_reason, profiles!deals_owner_user_id_fkey(full_name), teams(name)").eq("customer_id", customerId).order("created_at", { ascending: false }).limit(30),
     supabase.from("ai_customer_analyses").select("id, status, result, model, total_tokens, latency_ms, error_code, created_at, profiles!ai_customer_analyses_requested_by_fkey(full_name)").eq("customer_id", customerId).order("created_at", { ascending: false }).limit(10),
     supabase.from("ai_settings").select("is_enabled").eq("singleton_id", true).maybeSingle(),
   ]);
@@ -102,8 +102,8 @@ export async function getCustomerDetail(customerId: string): Promise<CustomerDet
     return { id: row.id, dueAt: row.due_at, status: row.status, priority: row.priority, completionReason: row.completion_reason, assigneeName: row.profiles?.full_name ?? "Chưa rõ", nextAction: row.activities?.next_action ?? "Chăm sóc khách hàng" } satisfies FollowUpTask;
   });
   const deals = (dealResult.data ?? []).map((item) => {
-    const row = item as unknown as { id: string; customer_id: string; amount_vnd: number | string; registered_at: string; status: DealItem["status"]; note: string | null; void_reason: string | null; profiles: { full_name: string } | null; teams: { name: string } | null };
-    return { id: row.id, customerId: row.customer_id, customerName: raw.full_name, ownerName: row.profiles?.full_name ?? "Chưa rõ", teamName: row.teams?.name ?? "—", amountVnd: Number(row.amount_vnd), registeredAt: row.registered_at, status: row.status, note: row.note, voidReason: row.void_reason } satisfies DealItem;
+    const row = item as unknown as { id: string; customer_id: string; amount_vnd: number | string; registered_at: string; status: DealItem["status"]; note: string | null; void_reason: string | null; created_at: string; created_by: string | null; replaces_deal_id: string | null; amendment_reason: string | null; profiles: { full_name: string } | null; teams: { name: string } | null };
+    return { id: row.id, customerId: row.customer_id, customerName: raw.full_name, ownerName: row.profiles?.full_name ?? "Chưa rõ", teamName: row.teams?.name ?? "—", amountVnd: Number(row.amount_vnd), registeredAt: row.registered_at, status: row.status, note: row.note, voidReason: row.void_reason, createdAt: row.created_at, createdBy: row.created_by, replacesDealId: row.replaces_deal_id, amendmentReason: row.amendment_reason } satisfies DealItem;
   });
   const aiAnalyses = (aiResult.data ?? []).map((item) => {
     const row = item as unknown as { id: string; status: AiCustomerAnalysisItem["status"]; result: unknown; model: string | null; total_tokens: number; latency_ms: number | null; error_code: string | null; created_at: string; profiles: { full_name: string } | null };

@@ -18,7 +18,7 @@
 | Chuyển người phụ trách | không | giữa Sale trong team | toàn hệ thống |
 | Ghi/xem hoạt động | own | team | all |
 | Sửa hoạt động | bản thân, trong cửa sổ cấu hình; không sửa loại hệ thống | team theo quyền quản lý | all |
-| Giao dịch | tạo/xem cho own; không xóa | team, có thể vô hiệu hóa | all |
+| Giao dịch | tạo/xem cho own; điều chỉnh bản tự tạo trong 24 giờ; không tự vô hiệu hóa | team, điều chỉnh/vô hiệu hóa | all, điều chỉnh/vô hiệu hóa |
 | Xem KPI | cá nhân | cá nhân + team | toàn hệ thống |
 | Đặt mục tiêu | không | Sale/team của mình | all |
 | Tài liệu `organization` | đọc | đọc | CRUD |
@@ -36,6 +36,7 @@
 - “Xóa” là cập nhật `deleted_at`, `deleted_by`, `delete_reason`; bản ghi đã xóa bị loại khỏi truy vấn mặc định.
 - Không cho người dùng tự nâng role. Thay đổi role/team phải audit.
 - Với user và team, “xóa” luôn có nghĩa là khóa/ngừng hoạt động bằng `is_active = false`; không xóa cứng để giữ assignment, activity, task, deal, tài liệu và audit.
+- Điều chỉnh deal không cập nhật đè số tiền. RPC khóa bản active, vô hiệu bản cũ và tạo đúng một bản thay thế có liên kết; Sale chỉ được điều chỉnh deal do mình tạo trong 24 giờ, Leader trong đúng team và Admin toàn hệ thống.
 - Chỉ Admin đang hoạt động được đổi tên, role, team hoặc trạng thái user/team qua RPC allowlist. Client authenticated không có quyền `UPDATE/DELETE` trực tiếp trên `profiles`/`teams`.
 - Không được ngừng team còn thành viên hoạt động hoặc khách chưa xóa mềm. Không được khóa, chuyển team hoặc đổi role của Sale còn khách phụ trách hay follow-up `pending`.
 - Admin hiện tại chỉ được đổi tên chính mình; không được tự hạ quyền, chuyển team hoặc tự khóa. User hoạt động không được gán vào team đã ngừng.

@@ -44,7 +44,8 @@ export type FollowUpTask = {
 export type DealItem = {
   id: string; customerId: string; customerName: string; ownerName: string; teamName: string;
   amountVnd: number; registeredAt: string; status: "active" | "void"; note: string | null;
-  voidReason: string | null;
+  voidReason: string | null; createdAt: string; createdBy: string | null;
+  replacesDealId: string | null; amendmentReason: string | null;
 };
 
 export type CustomerListItem = {

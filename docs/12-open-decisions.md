@@ -12,6 +12,7 @@ Các mục này không chặn thiết kế MVP; mặc định bên dưới đư�
 | Ngưỡng “không chăm sóc” | 3 ngày | trước M4 | cảnh báo dashboard |
 | KPI mục tiêu cụ thể | Leader/Admin cấu hình, không hard-code | trước M4 UAT | seed và báo cáo |
 | Attribution doanh thu sau chuyển giao | owner tại thời điểm deal | trước M4 | KPI cá nhân |
+| Điều chỉnh giao dịch | Sale sửa bản tự tạo trong 24 giờ; Leader/Admin theo phạm vi; tạo bản thay thế, không ghi đè | đã chốt trong UAT M7 ngày 2026-08-10 | deal RPC, audit và KPI |
 | Giới hạn file | 25 MB/file, allowlist MIME | trước M5 | Storage/cost |
 | Quyền tài liệu cá nhân | đúng một user; chưa có ACL nhiều người | trước M5 | schema ACL |
 | OCR và parser | bật theo định dạng/chi phí đã thử nghiệm | trước M5 UAT | worker/cost/chất lượng |
@@ -28,4 +29,3 @@ Các mục này không chặn thiết kế MVP; mặc định bên dưới đư�
 - AI ghi/sửa/xóa CRM; tích hợp Zalo/Facebook/tổng đài trong MVP.
 - Dữ liệu tài chính chi tiết, sức khỏe, giấy tờ tùy thân hoặc dữ liệu nhạy cảm.
 - Bất kỳ thay đổi nào tác động schema cốt lõi hoặc mô hình quyền đã chốt.
-

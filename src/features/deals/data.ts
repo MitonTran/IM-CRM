@@ -11,7 +11,7 @@ export async function getDealsWorkspace(query: DealQuery) {
   const userId = String(claims?.claims?.sub ?? "");
   const { data: profile, error: profileError } = await supabase.from("profiles").select("role").eq("id", userId).single();
   if (profileError || !profile) throw new Error("Không thể xác định quyền người dùng.");
-  const select = `id, customer_id, amount_vnd, registered_at, status, note, void_reason, profiles!deals_owner_user_id_fkey(full_name), teams(name), customers${query.source ? "!inner" : ""}(full_name, source_id)`;
+  const select = `id, customer_id, amount_vnd, registered_at, status, note, void_reason, created_at, created_by, replaces_deal_id, amendment_reason, profiles!deals_owner_user_id_fkey(full_name), teams(name), customers${query.source ? "!inner" : ""}(full_name, source_id)`;
   let request = supabase.from("deals").select(select, { count: "exact" });
   if (query.status !== "all") request = request.eq("status", query.status);
   if (query.owner) request = request.eq("owner_user_id", query.owner);
@@ -29,15 +29,14 @@ export async function getDealsWorkspace(query: DealQuery) {
   ]);
   if (dealResult.error) throw new Error(`Không tải được giao dịch: ${dealResult.error.message}`);
   const deals = (dealResult.data ?? []).map((item) => {
-    const row = item as unknown as { id: string; customer_id: string; amount_vnd: number | string; registered_at: string; status: DealItem["status"]; note: string | null; void_reason: string | null; profiles: { full_name: string } | null; teams: { name: string } | null; customers: { full_name: string } | null };
-    return { id: row.id, customerId: row.customer_id, customerName: row.customers?.full_name ?? "Khách hàng", ownerName: row.profiles?.full_name ?? "Chưa rõ", teamName: row.teams?.name ?? "—", amountVnd: Number(row.amount_vnd), registeredAt: row.registered_at, status: row.status, note: row.note, voidReason: row.void_reason } satisfies DealItem;
+    const row = item as unknown as { id: string; customer_id: string; amount_vnd: number | string; registered_at: string; status: DealItem["status"]; note: string | null; void_reason: string | null; created_at: string; created_by: string | null; replaces_deal_id: string | null; amendment_reason: string | null; profiles: { full_name: string } | null; teams: { name: string } | null; customers: { full_name: string } | null };
+    return { id: row.id, customerId: row.customer_id, customerName: row.customers?.full_name ?? "Khách hàng", ownerName: row.profiles?.full_name ?? "Chưa rõ", teamName: row.teams?.name ?? "—", amountVnd: Number(row.amount_vnd), registeredAt: row.registered_at, status: row.status, note: row.note, voidReason: row.void_reason, createdAt: row.created_at, createdBy: row.created_by, replacesDealId: row.replaces_deal_id, amendmentReason: row.amendment_reason } satisfies DealItem;
   });
   return {
     deals, count: dealResult.count ?? 0, pageSize, pageTotal: deals.filter((deal) => deal.status === "active").reduce((sum, deal) => sum + deal.amountVnd, 0),
     owners: (ownerResult.data ?? []).map((item) => ({ id: item.id, name: item.full_name })),
     teams: (teamResult.data ?? []).map((item) => ({ id: item.id, name: item.name })),
     sources: (sourceResult.data ?? []).map((item) => ({ id: item.id, name: item.name })),
-    viewerRole: profile.role as AppRole,
+    viewer: { id: userId, role: profile.role as AppRole },
   };
 }
-

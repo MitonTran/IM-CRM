@@ -80,7 +80,9 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Khắc phục local: hai field quản trị được phép vắng mặt và chuẩn hóa thành `null`; RPC vẫn tự lấy owner/team từ phiên Sale đã xác thực. Giá trị UUID sai nếu được gửi thủ công vẫn bị từ chối.
 - Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `93/93`, production build bằng Webpack `Pass`. Turbopack trong sandbox Codex bị chặn bind cổng nội bộ; đây là giới hạn môi trường và cần được đối chiếu lại bởi Vercel Preview build.
 - Triển khai: commit `c9b6ea0` đã được push; Quality workflow `31325089885` và Vercel Preview deployment đều pass.
-- Trạng thái: code đã có trên Preview; còn chờ người dùng thử lại tạo một khách giả để xác nhận live. Chưa đánh dấu toàn bộ checklist Sale A là `Pass`.
+- Xác nhận live ngày 2026-08-10: Sale A tạo thành công khách giả `Khách UAT Sale A 20260810-01` bằng email giả; không còn lỗi `Invalid input` và hệ thống mở hồ sơ khách vừa tạo.
+- Xác nhận chống trùng ngày 2026-08-10: gửi lại form với cùng email giả bị hệ thống chặn và không tạo bản ghi thứ hai.
+- Trạng thái: `Resolved` trên Preview; tạo khách hợp lệ và chống trùng email đều `Pass`. Các bước Sale A còn lại vẫn đang chờ UAT.
 
 ### UAT-05 — quản trị team và thành viên bằng khóa mềm
 
@@ -90,6 +92,22 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `93/93`, database/RLS `388/388` với Sale A, Sale B, Leader A, Leader B và Admin; production build Webpack `Pass`; Playwright E2E `8/8`, gồm đổi tên/ngừng/kích hoạt team và đổi tên/khóa/kích hoạt thành viên.
 - Triển khai Preview ngày `2026-08-10`: commit `d591e2f` đã được Vercel deploy; migration trên đã apply và được xác nhận khớp local/remote tại Supabase Preview ref `mhnvjuppwyoqibhtevhv`. Workflow Preview smoke `31375393361` pass public smoke, kiểm tra đăng nhập có secrets, performance và Lighthouse; artifact được lưu 14 ngày.
 - Trạng thái: automation Preview complete; còn chờ Admin đăng nhập và xác nhận thao tác trên dữ liệu giả. Production chưa thay đổi.
+
+### UAT-06 — Sale A cập nhật hồ sơ đúng phạm vi
+
+- Xác nhận live ngày 2026-08-10 trên Preview: Sale A đổi ưu tiên khách giả sang `Cao`, thêm ghi chú UAT và lưu thành công; dữ liệu vẫn đúng sau khi tải lại.
+- UI Sale A không hiển thị công cụ đổi người phụ trách/team hoặc xóa khách. Các thao tác quản trị vẫn chỉ xuất hiện cho vai trò được phép.
+- Sale A đã ghi thành công activity `Cuộc gọi` / `Đã kết nối` và tạo follow-up ưu tiên cao cho ngày 2026-08-11; activity xuất hiện trên timeline và task xuất hiện trong nhóm sắp tới theo giờ Việt Nam.
+- Sale A dời task về `2026-08-10 00:05` giờ Việt Nam; task rời nhóm sắp tới, xuất hiện đúng trong cả `Hôm nay` và `Quá hạn`, kèm trạng thái cảnh báo.
+- Sale A hoàn thành task với kết quả UAT; task biến mất khỏi danh sách quá hạn đang mở và vẫn xem được trong bộ lọc `Hôm nay` / `Hoàn thành` cùng lý do xử lý.
+- Trạng thái: cập nhật thông tin, giới hạn công cụ quản trị và toàn bộ luồng activity/follow-up của Sale A đều `Pass`. Giao dịch VND và kiểm tra chéo bằng Sale B vẫn đang chờ UAT.
+
+### UAT-07 — điều chỉnh giao dịch không ghi đè lịch sử
+
+- Quyết định được người dùng chốt ngày 2026-08-10: Sale sửa deal do mình tạo trong 24 giờ; Leader/Admin sửa theo phạm vi. Mỗi lần sửa phải vô hiệu bản cũ và tạo bản thay thế trong một transaction, không ghi đè hoặc tạo bản mồ côi làm sai KPI/mục tiêu.
+- Migration `20260810000200_m7_deal_amendments.sql` thêm liên kết self-FK, unique replacement trực tiếp và RPC `amend_deal` idempotent. Database vẫn chỉ cấp `SELECT` trực tiếp cho authenticated; mọi ghi đi qua RPC kiểm tra quyền.
+- Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `95/95`, database/RLS `411/411` với đủ năm vai trò, production build Webpack `Pass`, Playwright E2E `9/9`. Test bao phủ retry cùng idempotency key, no-op, cửa sổ Sale 24 giờ, chặn chéo team, Leader/Admin, FK không mồ côi và KPI chỉ cộng ba bản replacement active đúng `645.000.000 VND`.
+- Trạng thái: local complete, sẵn sàng review/apply Supabase Preview và deploy Vercel Preview. Production chưa thay đổi.
 
 ## Smoke test chung
 
@@ -103,9 +121,9 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 ## Sale A
 
 - [ ] Chỉ thấy khách do Sale A phụ trách; không thấy khách chưa giao hoặc Sale B.
-- [ ] Tạo khách hợp lệ; trùng phone/email chính xác bị cảnh báo/chặn.
-- [ ] Cập nhật thông tin được phép; không tự đổi owner/team hoặc xóa khách.
-- [ ] Ghi activity và follow-up; task hôm nay/quá hạn đúng `Asia/Ho_Chi_Minh`.
+- [x] Tạo khách hợp lệ; trùng phone/email chính xác bị cảnh báo/chặn.
+- [x] Cập nhật thông tin được phép; không tự đổi owner/team hoặc xóa khách.
+- [x] Ghi activity và follow-up; task hôm nay/quá hạn đúng `Asia/Ho_Chi_Minh`.
 - [ ] Tạo deal VND một lần; submit lặp không tăng doanh thu hai lần.
 - [ ] Dashboard cá nhân khớp dữ liệu nguồn; không vào được trang Admin.
 - [ ] Chỉ xem tài liệu organization/team A/cá nhân của mình; citation AI không mở tài liệu ngoài quyền.

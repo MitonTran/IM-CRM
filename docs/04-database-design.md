@@ -35,7 +35,7 @@ profiles 1--* audit_logs
 | `customer_assignments` | lịch sử giao | `id`, `customer_id`, `assignee_user_id`, `team_id`, `started_at`, `ended_at`, `reason`, `assigned_by` | unique partial một assignment mở/customer; idx assignee, team | theo quyền customer; chỉ RPC đặc quyền ghi |
 | `activities` | hành trình | `id`, `customer_id`, `type`, `outcome`, `content`, `occurred_at`, `performed_by`, `next_action`, `follow_up_at`, `is_late_entry`, audit + soft delete | idx customer/occurred desc, performer/occurred, type/occurred | kế thừa customer; actor/rule quản lý khi sửa |
 | `follow_up_tasks` | việc chăm sóc | `id`, `customer_id`, `activity_id`, `assignee_user_id`, `due_at`, `status`, `priority`, `completed_at`, audit | idx partial `(assignee_user_id,due_at)` pending; customer/status | assignee own; Leader team; Admin all |
-| `deals` | đăng ký/doanh thu | `id`, `customer_id`, `owner_user_id`, `team_id`, `amount_vnd numeric(15,0)`, `registered_at`, `status`, `idempotency_key`, `void_reason`, audit | unique idempotency; idx owner/date, team/date, customer | theo customer/team; vô hiệu hóa Leader/Admin |
+| `deals` | đăng ký/doanh thu và chuỗi điều chỉnh | `id`, `customer_id`, `owner_user_id`, `team_id`, `amount_vnd numeric(15,0)`, `registered_at`, `status`, `idempotency_key`, `void_reason`, `replaces_deal_id`, `amendment_reason`, audit | unique idempotency; unique replacement trực tiếp; FK self `RESTRICT`; idx owner/date, team/date, customer | theo customer/team; Sale sửa bản tự tạo ≤24h qua RPC; Leader/Admin điều chỉnh; vô hiệu hóa Leader/Admin |
 | `kpi_targets` | mục tiêu | `id`, `metric_code`, `scope_type`, `user_id`, `team_id`, `period_type`, `period_start/end`, `target_value numeric`, audit | unique metric/scope/period; idx period | Sale đọc own; Leader team; Admin all; Leader/Admin ghi |
 | `document_folders` | cây thư mục | `id`, `parent_id`, `name`, `scope_type`, `team_id`, `user_id`, audit + soft delete | unique parent/name/scope; idx parent | theo scope tài liệu |
 | `documents` | metadata logic | `id`, `folder_id`, `title`, `scope_type`, `team_id`, `user_id`, `current_version_id`, `status`, audit + soft delete | idx folder, scope/team/user, search title | org/team/user; ghi theo ma trận |
@@ -59,5 +59,6 @@ profiles 1--* audit_logs
 - `transfer_customer(customer_id, new_owner_id, reason, task_policy)`
 - `record_activity_with_follow_up(...)`
 - `register_deal(...)`
+- `amend_deal(deal_id, amount, registered_at, note, reason, idempotency_key)`
 - `void_deal(deal_id, reason)`
 - `get_kpi_summary(filters)` và các function AI chỉ đọc ở tài liệu AI.
