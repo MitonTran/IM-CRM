@@ -122,6 +122,15 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Kho tài liệu Sale B chỉ hiển thị tài liệu giả phạm vi toàn công ty. Preview chưa có fixture tài liệu Team A/cá nhân Sale A để xác nhận từ chối bằng UUID/path; nhánh tài liệu kiểm tra chéo vì vậy vẫn `Blocked` và phải thực hiện sau khi Leader A/Admin tạo fixture giới hạn quyền.
 - Commit bằng chứng UAT Sale A `1c58df1` đã pass Quality workflow `31402876147` gồm application, database/restore drill và E2E. Trạng thái UAT-08: phạm vi CRM/KPI/Admin `Pass`; tài liệu kiểm tra chéo còn `Blocked` vì thiếu fixture, Production chưa thay đổi.
 
+### UAT-09 — Leader Team A, mục tiêu KPI và fixture tài liệu giới hạn quyền
+
+- Xác nhận live lúc `2026-08-10T16:06:04Z` trên branch alias Preview bằng phiên Leader Team A. Dashboard cố định filter Team A, chỉ liệt kê Sale A và khớp `25.500.000 VND`, `2` khách mới, `1` liên hệ thành công và `0` task quá hạn; URL trực tiếp `/admin/people` chuyển về Dashboard.
+- Danh sách khách chỉ có hai khách giả Team A và facet chỉ có Sale A / Team A. Form chuyển phụ trách chỉ cho chọn Sale A, không có Team B; do Team A hiện chỉ có một Sale nên chưa thể diễn tập chuyển giữa hai Sale và đối chiếu transaction/audit live. Database/RLS test vẫn bao phủ nhánh này.
+- Leader A đặt mục tiêu doanh thu tháng 8/2026 cho Sale A là `50.000.000 VND`. Khi lọc theo Sale A, Dashboard hiển thị đúng `25.500.000 / 50.000.000 VND`, tương đương `51,0%`; mục tiêu được lưu sau khi tải lại dữ liệu.
+- Leader A tải PDF giả `607` byte ở phạm vi Team A. Hệ thống tạo đúng một document/version, signed URL trả `application/pdf` từ bucket private và trích xuất chuyển sang `Sẵn sàng cho AI`; semantic index còn chờ worker tại thời điểm kiểm tra. File tạm cục bộ đã được dọn sau upload.
+- Fixture Team A đã sẵn sàng để quay lại phiên Sale B kiểm tra danh sách, UUID và signed route đều bị chặn. Kiểm tra Leader A không thấy/chỉnh Team B vẫn cần fixture Team B do Leader B tạo ở cổng tiếp theo.
+- Commit bằng chứng Sale B `627eaa1` đã pass Quality workflow `31404315892`. Trạng thái UAT-09: Dashboard/target, giới hạn Admin và quản lý tài liệu Team A `Pass`; transfer live và đối chiếu tài liệu hai chiều còn chờ fixture/tài khoản tương ứng. Production chưa thay đổi.
+
 ## Smoke test chung
 
 - [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
@@ -150,8 +159,8 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 
 - [ ] Thấy Sale A và khách chưa giao team A; không thấy team B.
 - [ ] Giao/chuyển khách trong team A transaction-safe; lịch sử assignment và audit rõ.
-- [ ] Không chuyển khách sang team B hoặc tự nâng quyền.
-- [ ] Dashboard/team KPI, leaderboard, filter và target chỉ giới hạn team A.
+- [x] Không chuyển khách sang team B hoặc tự nâng quyền.
+- [x] Dashboard/team KPI, leaderboard, filter và target chỉ giới hạn team A.
 - [ ] Quản lý tài liệu team A; không thấy/chỉnh team B.
 
 ## Leader team B (kiểm tra chéo)
