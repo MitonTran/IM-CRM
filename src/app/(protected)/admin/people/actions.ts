@@ -16,6 +16,19 @@ const inviteSchema = z.object({
   role: z.enum(["admin", "leader", "sale"]),
   teamId: z.union([z.uuid(), z.literal("")]),
 });
+const activeFlag = z.enum(["true", "false"]).transform((value) => value === "true");
+const manageTeamSchema = z.object({
+  teamId: z.uuid(),
+  name: z.string().trim().min(2).max(80),
+  isActive: activeFlag,
+});
+const managePersonSchema = z.object({
+  userId: z.uuid(),
+  fullName: z.string().trim().min(2).max(120),
+  role: z.enum(["admin", "leader", "sale"]),
+  teamId: z.union([z.uuid(), z.literal("")]),
+  isActive: activeFlag,
+});
 
 async function requireAdmin() {
   const supabase = await createClient();
@@ -34,6 +47,67 @@ export async function createTeam(formData: FormData) {
   const { error } = await supabase.from("teams").insert({ name: parsed.data.name });
   if (error) redirect("/admin/people?error=team-create");
   revalidatePath("/admin/people");
+  redirect("/admin/people?status=team-created");
+}
+
+function managementErrorCode(message: string) {
+  const knownCodes = [
+    "team_manage_input_invalid",
+    "team_manage_not_found",
+    "team_manage_active_members",
+    "team_manage_active_customers",
+    "team_manage_name_taken",
+    "profile_manage_input_invalid",
+    "profile_manage_not_found",
+    "profile_manage_team_required",
+    "profile_manage_team_invalid",
+    "profile_manage_self_privileges",
+    "profile_manage_active_customers",
+    "profile_manage_pending_tasks",
+  ] as const;
+  return knownCodes.find((code) => message.includes(code)) ?? "management-failed";
+}
+
+export async function manageTeam(formData: FormData) {
+  const supabase = await requireAdmin();
+  const parsed = manageTeamSchema.safeParse({
+    teamId: formData.get("teamId"),
+    name: formData.get("name"),
+    isActive: formData.get("isActive"),
+  });
+  if (!parsed.success) redirect("/admin/people?error=team_manage_input_invalid");
+
+  const { error } = await supabase.rpc("admin_manage_team", {
+    target_team_id: parsed.data.teamId,
+    managed_name: parsed.data.name,
+    managed_is_active: parsed.data.isActive,
+  });
+  if (error) redirect(`/admin/people?error=${managementErrorCode(error.message)}`);
+  revalidatePath("/admin/people");
+  redirect("/admin/people?status=team-saved");
+}
+
+export async function managePerson(formData: FormData) {
+  const supabase = await requireAdmin();
+  const parsed = managePersonSchema.safeParse({
+    userId: formData.get("userId"),
+    fullName: formData.get("fullName"),
+    role: formData.get("role"),
+    teamId: formData.get("teamId"),
+    isActive: formData.get("isActive"),
+  });
+  if (!parsed.success) redirect("/admin/people?error=profile_manage_input_invalid");
+
+  const { error } = await supabase.rpc("admin_manage_profile", {
+    target_user_id: parsed.data.userId,
+    managed_full_name: parsed.data.fullName,
+    managed_role: parsed.data.role,
+    managed_team_id: parsed.data.teamId || null,
+    managed_is_active: parsed.data.isActive,
+  });
+  if (error) redirect(`/admin/people?error=${managementErrorCode(error.message)}`);
+  revalidatePath("/admin/people");
+  redirect("/admin/people?status=person-saved");
 }
 
 export async function invitePerson(formData: FormData) {

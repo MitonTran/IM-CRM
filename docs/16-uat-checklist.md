@@ -79,7 +79,16 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Nguyên nhân: UI không render `ownerUserId` và `teamId` cho Sale, nhưng schema Server Action vẫn yêu cầu hai field phải có mặt. Validation dừng request trước RPC; database và RLS không bị thay đổi.
 - Khắc phục local: hai field quản trị được phép vắng mặt và chuẩn hóa thành `null`; RPC vẫn tự lấy owner/team từ phiên Sale đã xác thực. Giá trị UUID sai nếu được gửi thủ công vẫn bị từ chối.
 - Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `93/93`, production build bằng Webpack `Pass`. Turbopack trong sandbox Codex bị chặn bind cổng nội bộ; đây là giới hạn môi trường và cần được đối chiếu lại bởi Vercel Preview build.
-- Trạng thái: chờ deploy Preview và người dùng thử lại bằng dữ liệu giả. Chưa đánh dấu toàn bộ checklist Sale A là `Pass`.
+- Triển khai: commit `c9b6ea0` đã được push; Quality workflow `31325089885` và Vercel Preview deployment đều pass.
+- Trạng thái: code đã có trên Preview; còn chờ người dùng thử lại tạo một khách giả để xác nhận live. Chưa đánh dấu toàn bộ checklist Sale A là `Pass`.
+
+### UAT-05 — quản trị team và thành viên bằng khóa mềm
+
+- Quy ước được người dùng chốt ngày `2026-08-10`: “xóa” team/nhân sự nghĩa là ngừng/khóa bằng trạng thái, không xóa cứng và phải giữ toàn bộ lịch sử.
+- Migration `20260810000100_m7_admin_people_management.sql` thu hồi quyền sửa/xóa trực tiếp của authenticated và thêm hai RPC Admin-only cho đổi tên, role, team và trạng thái.
+- Guardrail: chặn ngừng team còn member/khách hoạt động; chặn khóa, đổi role hoặc chuyển team Sale còn khách hay follow-up mở; chặn Admin hiện tại tự hạ quyền/chuyển team/tự khóa; chặn kích hoạt user trong team đã ngừng.
+- Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `93/93`, database/RLS `388/388` với Sale A, Sale B, Leader A, Leader B và Admin; production build Webpack `Pass`; Playwright E2E `8/8`, gồm đổi tên/ngừng/kích hoạt team và đổi tên/khóa/kích hoạt thành viên.
+- Trạng thái: local complete; chờ migration + ứng dụng được triển khai lên Supabase/Vercel Preview và Admin UAT xác nhận bằng dữ liệu giả. Production chưa thay đổi.
 
 ## Smoke test chung
 

@@ -35,6 +35,10 @@
 - Sửa owner/team trực tiếp trên `customers` bị cấm với Sale và chỉ đi qua function chuyển giao cho Leader/Admin.
 - “Xóa” là cập nhật `deleted_at`, `deleted_by`, `delete_reason`; bản ghi đã xóa bị loại khỏi truy vấn mặc định.
 - Không cho người dùng tự nâng role. Thay đổi role/team phải audit.
+- Với user và team, “xóa” luôn có nghĩa là khóa/ngừng hoạt động bằng `is_active = false`; không xóa cứng để giữ assignment, activity, task, deal, tài liệu và audit.
+- Chỉ Admin đang hoạt động được đổi tên, role, team hoặc trạng thái user/team qua RPC allowlist. Client authenticated không có quyền `UPDATE/DELETE` trực tiếp trên `profiles`/`teams`.
+- Không được ngừng team còn thành viên hoạt động hoặc khách chưa xóa mềm. Không được khóa, chuyển team hoặc đổi role của Sale còn khách phụ trách hay follow-up `pending`.
+- Admin hiện tại chỉ được đổi tên chính mình; không được tự hạ quyền, chuyển team hoặc tự khóa. User hoạt động không được gán vào team đã ngừng.
 
 ## Áp dụng RLS
 
@@ -53,4 +57,3 @@
 - AI: chỉ gọi tool backend có kiểm tra user; không nhận raw SQL.
 - Tài liệu: quyền riêng `organization/team/user`, không suy ra từ quyền CRM.
 - Bảng cấu hình công khai nội bộ (ví dụ loại hoạt động) vẫn bật RLS và chỉ cho authenticated đọc.
-

@@ -37,7 +37,9 @@ export default async function globalSetup() {
   try {
     await sql.begin(async (tx) => {
       await tx`insert into public.teams(id,name,is_active) values
-        (${E2E_TEAMS.a.id}::uuid,${E2E_TEAMS.a.name},true),(${E2E_TEAMS.b.id}::uuid,${E2E_TEAMS.b.name},true)
+        (${E2E_TEAMS.a.id}::uuid,${E2E_TEAMS.a.name},true),
+        (${E2E_TEAMS.b.id}::uuid,${E2E_TEAMS.b.name},true),
+        (${E2E_TEAMS.empty.id}::uuid,${E2E_TEAMS.empty.name},true)
         on conflict(id) do update set name=excluded.name,is_active=true`;
       const profiles = [
         [id(E2E_USERS.admin.email), E2E_USERS.admin.fullName, "admin", null],

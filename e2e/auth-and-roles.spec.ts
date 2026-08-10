@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
-import { E2E_CUSTOMERS, E2E_PASSWORD, E2E_RECOVERY_PASSWORD, E2E_USERS } from "./fixtures";
+import { E2E_CUSTOMERS, E2E_PASSWORD, E2E_RECOVERY_PASSWORD, E2E_TEAMS, E2E_USERS } from "./fixtures";
 
 async function login(page: Page, email: string, password = E2E_PASSWORD) {
   await page.goto("/login");
@@ -8,6 +8,11 @@ async function login(page: Page, email: string, password = E2E_PASSWORD) {
   await page.getByLabel("Mật khẩu").fill(password);
   await page.getByRole("button", { name: "Đăng nhập" }).click();
   await expect(page).toHaveURL(/\/dashboard/);
+}
+
+async function expectManagementSaved(page: Page, message: string) {
+  await page.waitForLoadState("networkidle");
+  await expect(page.getByRole("status")).toHaveText(message);
 }
 
 function required(name: string) {
@@ -90,5 +95,30 @@ test("Admin thấy toàn hệ thống và trang nhân sự", async ({ page }) =>
   await expect(page.getByText(E2E_CUSTOMERS.unassignedA.name, { exact: true })).toBeVisible();
   await page.goto("/admin/people");
   await expect(page.getByRole("heading", { name: "Nhân sự & team" })).toBeVisible();
-  await expect(page.getByText(E2E_USERS.saleB.fullName, { exact: true })).toBeVisible();
+  await expect(page.getByRole("article", { name: `Quản lý thành viên ${E2E_USERS.saleB.fullName}` })).toBeVisible();
+
+  const renamedTeam = "Team Trống Đã Đổi E2E";
+  const teamCard = page.getByRole("article", { name: `Quản lý team ${E2E_TEAMS.empty.name}` });
+  await teamCard.getByLabel(`Tên ${E2E_TEAMS.empty.name}`).fill(renamedTeam);
+  await teamCard.getByRole("button", { name: "Lưu tên" }).click();
+  await expectManagementSaved(page, "Đã lưu tên và trạng thái team.");
+  const renamedTeamCard = page.getByRole("article", { name: `Quản lý team ${renamedTeam}` });
+  await renamedTeamCard.getByRole("button", { name: "Ngừng" }).click();
+  await expectManagementSaved(page, "Đã lưu tên và trạng thái team.");
+  const stoppedTeamCard = page.getByRole("article", { name: `Quản lý team ${renamedTeam}` });
+  await expect(stoppedTeamCard.getByText("Ngừng hoạt động", { exact: true })).toBeVisible();
+  await stoppedTeamCard.getByRole("button", { name: "Kích hoạt" }).click();
+  await expectManagementSaved(page, "Đã lưu tên và trạng thái team.");
+
+  const leaderCard = page.getByRole("article", { name: `Quản lý thành viên ${E2E_USERS.leaderB.fullName}` });
+  await leaderCard.getByLabel("Họ tên thành viên").fill("Leader B Đã Đổi E2E");
+  await leaderCard.getByRole("button", { name: "Lưu", exact: true }).click();
+  await expectManagementSaved(page, "Đã lưu hồ sơ và trạng thái thành viên.");
+  const renamedLeaderCard = page.getByRole("article", { name: "Quản lý thành viên Leader B Đã Đổi E2E" });
+  await renamedLeaderCard.getByRole("button", { name: "Khóa" }).click();
+  await expectManagementSaved(page, "Đã lưu hồ sơ và trạng thái thành viên.");
+  const lockedLeaderCard = page.getByRole("article", { name: "Quản lý thành viên Leader B Đã Đổi E2E" });
+  await expect(lockedLeaderCard.getByText("Không hoạt động", { exact: true })).toBeVisible();
+  await lockedLeaderCard.getByRole("button", { name: "Kích hoạt" }).click();
+  await expectManagementSaved(page, "Đã lưu hồ sơ và trạng thái thành viên.");
 });

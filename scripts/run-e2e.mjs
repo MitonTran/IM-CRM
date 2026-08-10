@@ -52,5 +52,8 @@ const testEnv = {
   E2E_LOCAL_ONLY: "true",
 };
 
-run("npm", ["run", "build"], testEnv);
+const buildArgs = process.env.E2E_BUILD_ENGINE === "webpack"
+  ? ["run", "build", "--", "--webpack"]
+  : ["run", "build"];
+run("npm", buildArgs, testEnv);
 run(playwrightBin, ["test"], testEnv);
