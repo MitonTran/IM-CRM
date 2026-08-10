@@ -113,6 +113,15 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Dashboard Sale A cùng kỳ hiển thị doanh thu `25.500.000 VND`, khớp đúng tổng Active của khách giả và không cộng cả bản đã vô hiệu. Cơ chế retry/idempotency không tăng doanh thu hai lần đã được bao phủ thêm bởi database/RLS và Playwright E2E ở trên.
 - Trạng thái: `Pass` trên Preview cho luồng Sale A và KPI không nhân đôi. Production chưa thay đổi; kiểm tra chéo Sale B/Leader/Admin vẫn thuộc các cổng UAT tiếp theo.
 
+### UAT-08 — Sale B không đọc chéo dữ liệu Team A
+
+- Xác nhận live lúc `2026-08-10T15:33:26Z` trên branch alias Preview bằng phiên Sale B / Team B; chỉ thực hiện kiểm tra đọc và không thay đổi dữ liệu.
+- Danh sách khách của Sale B có `0` bản ghi và chỉ có facet Sale B / Team B. Mở trực tiếp UUID khách giả của Sale A trả “Bản ghi không tồn tại hoặc bạn không có quyền xem”, không hiển thị hồ sơ, activity hay công cụ ghi dữ liệu.
+- Trang giao dịch hiển thị `0 VND` / `0` giao dịch; trang công việc hiển thị `0` quá hạn, hôm nay và sắp tới. Dashboard Sale B cũng hiển thị toàn bộ KPI bằng `0`, không rò doanh thu `25.500.000 VND` hoặc dữ liệu phễu của Sale A.
+- URL trực tiếp `/admin/people` chuyển Sale B về `/dashboard`; không hiển thị UI Admin. Không có lỗi console trong lần kiểm tra hồ sơ bị chặn.
+- Kho tài liệu Sale B chỉ hiển thị tài liệu giả phạm vi toàn công ty. Preview chưa có fixture tài liệu Team A/cá nhân Sale A để xác nhận từ chối bằng UUID/path; nhánh tài liệu kiểm tra chéo vì vậy vẫn `Blocked` và phải thực hiện sau khi Leader A/Admin tạo fixture giới hạn quyền.
+- Commit bằng chứng UAT Sale A `1c58df1` đã pass Quality workflow `31402876147` gồm application, database/restore drill và E2E. Trạng thái UAT-08: phạm vi CRM/KPI/Admin `Pass`; tài liệu kiểm tra chéo còn `Blocked` vì thiếu fixture, Production chưa thay đổi.
+
 ## Smoke test chung
 
 - [ ] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
@@ -134,7 +143,7 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 
 ## Sale B (kiểm tra chéo)
 
-- [ ] Không tìm, mở bằng UUID, sửa hoặc xem activity/deal/task của khách Sale A.
+- [x] Không tìm, mở bằng UUID, sửa hoặc xem activity/deal/task của khách Sale A.
 - [ ] Không xem tài liệu team A/cá nhân Sale A, kể cả khi biết URL/path.
 
 ## Leader team A
