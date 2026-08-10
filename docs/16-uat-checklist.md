@@ -100,14 +100,18 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Sale A đã ghi thành công activity `Cuộc gọi` / `Đã kết nối` và tạo follow-up ưu tiên cao cho ngày 2026-08-11; activity xuất hiện trên timeline và task xuất hiện trong nhóm sắp tới theo giờ Việt Nam.
 - Sale A dời task về `2026-08-10 00:05` giờ Việt Nam; task rời nhóm sắp tới, xuất hiện đúng trong cả `Hôm nay` và `Quá hạn`, kèm trạng thái cảnh báo.
 - Sale A hoàn thành task với kết quả UAT; task biến mất khỏi danh sách quá hạn đang mở và vẫn xem được trong bộ lọc `Hôm nay` / `Hoàn thành` cùng lý do xử lý.
-- Trạng thái: cập nhật thông tin, giới hạn công cụ quản trị và toàn bộ luồng activity/follow-up của Sale A đều `Pass`. Giao dịch VND và kiểm tra chéo bằng Sale B vẫn đang chờ UAT.
+- Trạng thái: cập nhật thông tin, giới hạn công cụ quản trị và toàn bộ luồng activity/follow-up của Sale A đều `Pass`. Giao dịch VND đã pass tại UAT-07; kiểm tra chéo bằng Sale B vẫn đang chờ UAT.
 
 ### UAT-07 — điều chỉnh giao dịch không ghi đè lịch sử
 
 - Quyết định được người dùng chốt ngày 2026-08-10: Sale sửa deal do mình tạo trong 24 giờ; Leader/Admin sửa theo phạm vi. Mỗi lần sửa phải vô hiệu bản cũ và tạo bản thay thế trong một transaction, không ghi đè hoặc tạo bản mồ côi làm sai KPI/mục tiêu.
 - Migration `20260810000200_m7_deal_amendments.sql` thêm liên kết self-FK, unique replacement trực tiếp và RPC `amend_deal` idempotent. Database vẫn chỉ cấp `SELECT` trực tiếp cho authenticated; mọi ghi đi qua RPC kiểm tra quyền.
 - Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `95/95`, database/RLS `411/411` với đủ năm vai trò, production build Webpack `Pass`, Playwright E2E `9/9`. Test bao phủ retry cùng idempotency key, no-op, cửa sổ Sale 24 giờ, chặn chéo team, Leader/Admin, FK không mồ côi và KPI chỉ cộng ba bản replacement active đúng `645.000.000 VND`.
-- Trạng thái: local complete, sẵn sàng review/apply Supabase Preview và deploy Vercel Preview. Production chưa thay đổi.
+- Triển khai Preview ngày 2026-08-10: commit `4c59e3a` đã push; migration đã dry-run rồi apply vào Supabase Preview ref `mhnvjuppwyoqibhtevhv`, và migration list local/remote khớp đến `20260810000200`. Quality workflow `31399244052` pass application, database/restore drill và E2E; Vercel deployment pass.
+- Smoke chỉ đọc lúc `2026-08-10T14:42:45Z`: cả deployment URL và branch alias UAT pass health, login content, security headers và response budget, không cần protection bypass.
+- Xác nhận live lúc `2026-08-10T15:17:45Z` bằng phiên Sale A: khách giả chỉ có một giao dịch Active `25.500.000 VND` và một bản nguồn `25.000.000 VND` ở trạng thái vô hiệu; bản Active hiển thị là bản điều chỉnh, có lý do và còn đúng sau tải lại.
+- Dashboard Sale A cùng kỳ hiển thị doanh thu `25.500.000 VND`, khớp đúng tổng Active của khách giả và không cộng cả bản đã vô hiệu. Cơ chế retry/idempotency không tăng doanh thu hai lần đã được bao phủ thêm bởi database/RLS và Playwright E2E ở trên.
+- Trạng thái: `Pass` trên Preview cho luồng Sale A và KPI không nhân đôi. Production chưa thay đổi; kiểm tra chéo Sale B/Leader/Admin vẫn thuộc các cổng UAT tiếp theo.
 
 ## Smoke test chung
 
@@ -120,12 +124,12 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 
 ## Sale A
 
-- [ ] Chỉ thấy khách do Sale A phụ trách; không thấy khách chưa giao hoặc Sale B.
+- [x] Chỉ thấy khách do Sale A phụ trách; không thấy khách chưa giao hoặc Sale B.
 - [x] Tạo khách hợp lệ; trùng phone/email chính xác bị cảnh báo/chặn.
 - [x] Cập nhật thông tin được phép; không tự đổi owner/team hoặc xóa khách.
 - [x] Ghi activity và follow-up; task hôm nay/quá hạn đúng `Asia/Ho_Chi_Minh`.
-- [ ] Tạo deal VND một lần; submit lặp không tăng doanh thu hai lần.
-- [ ] Dashboard cá nhân khớp dữ liệu nguồn; không vào được trang Admin.
+- [x] Tạo deal VND một lần; submit lặp không tăng doanh thu hai lần.
+- [x] Dashboard cá nhân khớp dữ liệu nguồn; không vào được trang Admin.
 - [ ] Chỉ xem tài liệu organization/team A/cá nhân của mình; citation AI không mở tài liệu ngoài quyền.
 
 ## Sale B (kiểm tra chéo)
