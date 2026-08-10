@@ -88,7 +88,8 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Migration `20260810000100_m7_admin_people_management.sql` thu hồi quyền sửa/xóa trực tiếp của authenticated và thêm hai RPC Admin-only cho đổi tên, role, team và trạng thái.
 - Guardrail: chặn ngừng team còn member/khách hoạt động; chặn khóa, đổi role hoặc chuyển team Sale còn khách hay follow-up mở; chặn Admin hiện tại tự hạ quyền/chuyển team/tự khóa; chặn kích hoạt user trong team đã ngừng.
 - Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `93/93`, database/RLS `388/388` với Sale A, Sale B, Leader A, Leader B và Admin; production build Webpack `Pass`; Playwright E2E `8/8`, gồm đổi tên/ngừng/kích hoạt team và đổi tên/khóa/kích hoạt thành viên.
-- Trạng thái: local complete; chờ migration + ứng dụng được triển khai lên Supabase/Vercel Preview và Admin UAT xác nhận bằng dữ liệu giả. Production chưa thay đổi.
+- Triển khai Preview ngày `2026-08-10`: commit `d591e2f` đã được Vercel deploy; migration trên đã apply và được xác nhận khớp local/remote tại Supabase Preview ref `mhnvjuppwyoqibhtevhv`. Workflow Preview smoke `31375393361` pass public smoke, kiểm tra đăng nhập có secrets, performance và Lighthouse; artifact được lưu 14 ngày.
+- Trạng thái: automation Preview complete; còn chờ Admin đăng nhập và xác nhận thao tác trên dữ liệu giả. Production chưa thay đổi.
 
 ## Smoke test chung
 
