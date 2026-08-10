@@ -10,6 +10,8 @@
 /playwright-report
 /test-results
 /.lighthouseci
+/backup-output
+*.imcrm-backup
 
 # local environment (keep example)
 .env*

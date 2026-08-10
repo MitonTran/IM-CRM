@@ -20,7 +20,7 @@ Các mục này không chặn thiết kế MVP; mặc định bên dưới đư�
 | Retention AI | 90 ngày hội thoại, analysis giữ cùng khách | trước M6/Production | privacy/cost |
 | Model/quota AI | cấu hình server, quota theo user/ngày | trước M6 | chi phí/chất lượng |
 | MFA Admin | bật nếu plan/quy trình hỗ trợ | trước Production | bảo mật/vận hành |
-| Backup/PITR | chọn theo Supabase plan và RTO/RPO | trước Production | chi phí/khôi phục |
+| Backup/PITR | đã chốt gói Free ngày 2026-08-10: logical export mã hóa mỗi 24 giờ, backup Storage riêng, RPO 24 giờ và RTO 8 giờ; không dùng PITR | đã chốt trước Production | vận hành thủ công hơn, phải giữ key và diễn tập restore cô lập |
 
 ## Điều kiện bắt buộc dừng và hỏi lại
 

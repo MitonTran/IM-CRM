@@ -69,6 +69,34 @@ where id = '<UUID_ADMIN>';
 
 Không đưa email, mật khẩu hoặc UUID thật vào migration/seed/repository. Sau bootstrap, Admin mời các thành viên khác trong màn hình “Nhân sự & team”.
 
+## Backup mã hóa cho Supabase Free
+
+Gói Free không có scheduled project backup/PITR. IM CRM dùng workflow `Free tier encrypted backup` để tạo logical export mỗi 24 giờ và lưu artifact mã hóa ngoài Supabase trong 14 ngày. Workflow không chạy lịch cho đến khi repository variable `FREE_BACKUP_ENABLED=true`; phải chạy thủ công và xác minh Preview trước khi bật lịch.
+
+GitHub Actions secrets bắt buộc:
+
+- `FREE_BACKUP_DB_URL`: Session pooler/direct PostgreSQL URL có mật khẩu đã percent-encode.
+- `FREE_BACKUP_SUPABASE_URL`: Project URL của đúng project nguồn.
+- `FREE_BACKUP_SERVICE_ROLE_KEY`: chỉ dùng trên runner để đọc hai bucket private; không ghi log/artifact bản rõ.
+- `BACKUP_ENCRYPTION_KEY`: base64 của đúng 32 byte, có thể tạo bằng `openssl rand -base64 32`. Release owner phải giữ thêm một bản trong password manager ngoài GitHub; mất key đồng nghĩa không thể khôi phục.
+
+Repository variables bắt buộc:
+
+- `FREE_BACKUP_PROJECT_REF`: project ref 20 ký tự phải khớp cả API URL và database URL.
+- `FREE_BACKUP_SOURCE_ENV`: `preview` trong lần diễn tập, chỉ đổi sang `production` sau ký duyệt go-live.
+- `FREE_BACKUP_ENABLED`: để `false`/trống khi thiết lập; chỉ đặt `true` sau lần chạy thủ công `Pass`.
+
+Bundle gồm roles, schema, data, migration history và toàn bộ object của `documents`/`document-extracted`. Script tạo manifest SHA-256, mã hóa AES-256-GCM, xóa thư mục bản rõ rồi workflow giải mã tạm để xác minh checksum trước khi chỉ upload file `*.imcrm-backup`.
+
+Lệnh cục bộ tương đương, không dán secret vào command history:
+
+```bash
+npm run backup:free
+BACKUP_FILE=/path/to/file.imcrm-backup npm run backup:free:verify
+```
+
+Chỉ chạy restore vào Supabase project disposable/cô lập. Không restore đè Preview hoặc Production và không commit file backup/bản rõ; `.gitignore` chặn định dạng `*.imcrm-backup` cùng thư mục `backup-output`.
+
 Email mời đi qua `/auth/callback`; email khôi phục đi qua `/auth/confirm`, sau đó tới `/auth/update-password`. Màn hình đăng nhập có liên kết “Quên mật khẩu”; phản hồi gửi email luôn dùng thông báo chung để không tiết lộ tài khoản có tồn tại. Server Action recovery đặt `RedirectTo` là `/auth/confirm` trên HTTPS origin của chính request khi `Origin` khớp `Host`/`X-Forwarded-Host`; `NEXT_PUBLIC_APP_URL` chỉ là fallback an toàn. Thêm `/auth/confirm` của từng hostname UAT vào Supabase Redirect URLs.
 
 Khi đã cấu hình custom SMTP và Dashboard cho phép sửa Auth Email Templates, ưu tiên liên kết token-hash phía server cho Invite user và Reset password để người dùng có thể mở email ở trình duyệt khác:

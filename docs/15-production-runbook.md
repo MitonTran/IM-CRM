@@ -42,7 +42,7 @@ Không tiếp tục nếu thiếu bất kỳ mục nào:
 - Ba UAT approver đã ký; không còn lỗi nghiêm trọng/cao.
 - Commit SHA, Preview URL, Supabase Preview ref và kết quả CI đã được lưu.
 - Biến môi trường Production được đối chiếu theo tên, không sao chép key Preview.
-- RTO/RPO và Supabase plan/PITR đã được chốt. Backup gần nhất có trạng thái thành công; Storage được kiểm tra riêng vì database backup không chứa object file.
+- Phương án Supabase Free, RPO `24 giờ` và RTO `8 giờ` đã được chốt. Logical backup mã hóa gần nhất phải `Pass` cả tạo bundle và verify checksum; manifest phải có đủ hai bucket private vì database dump chỉ chứa metadata Storage.
 - Maintenance window, release owner, database owner, incident commander và kênh thông báo đã sẵn sàng.
 - Bản Vercel Production tốt gần nhất vẫn được giữ lại cho Instant Rollback.
 
@@ -50,7 +50,7 @@ Không tiếp tục nếu thiếu bất kỳ mục nào:
 
 1. Tạm dừng thay đổi khác; thông báo bắt đầu maintenance window.
 2. Database owner xác minh project Production đang link, chạy `supabase migration list` và `supabase db push --dry-run`; dừng nếu danh sách khác phiếu phát hành.
-3. Xác nhận backup/PITR lần cuối, sau đó mới chạy `supabase db push` một lần. Không `db reset --linked`, không sửa SQL trực tiếp trên Production.
+3. Chạy thủ công workflow `Free tier encrypted backup` trên Production và xác nhận artifact mã hóa/verify `Pass`, sau đó mới chạy `supabase db push` một lần. Không `db reset --linked`, không sửa SQL trực tiếp trên Production.
 4. Kiểm tra nhanh database: migration history, RLS và các RPC chính; không ghi dữ liệu demo.
 5. Tạo Vercel Production deployment dựa trên đúng commit đã UAT. Nếu plan/quy trình hỗ trợ, dùng staged Production deployment và chỉ gán domain sau smoke test.
 6. Promote deployment đã duyệt; ghi deployment ID và thời gian UTC.
@@ -69,15 +69,18 @@ Không tiếp tục nếu thiếu bất kỳ mục nào:
 
 - Vercel rollback **không** rollback database. Chỉ rollback web nếu code cũ tương thích schema mới.
 - Ưu tiên migration forward-fix đã review và thử trên bản sao/Preview; không sửa migration cũ và không thao tác tay tùy ý.
-- Chỉ khôi phục backup/PITR khi có mất/hỏng dữ liệu và incident commander chấp nhận downtime/RPO. Trong lúc restore, ứng dụng có thể không truy cập được.
+- Chỉ khôi phục logical backup khi có mất/hỏng dữ liệu và incident commander chấp nhận downtime/RPO. Với gói Free không có PITR; trong lúc restore, ứng dụng có thể không truy cập được và có thể mất tối đa 24 giờ dữ liệu kể từ artifact cuối.
 
 ## 7. Backup và diễn tập khôi phục
 
-- Chốt RPO (mất tối đa bao nhiêu dữ liệu) và RTO (khôi phục trong bao lâu) trước khi chọn daily backup hay PITR.
-- Supabase paid plan có daily backup theo thời gian lưu của plan; PITR là add-on. Free tier cần logical export định kỳ và lưu off-site được mã hóa.
-- Database backup chỉ khôi phục metadata Storage, không khôi phục file object đã mất; phải có kế hoạch Storage riêng.
-- Mỗi quý, restore backup vào project cô lập/disposable, chạy migration check, đếm bản ghi, kiểm tra Auth/RLS/Storage và ghi thời gian thực tế. Không diễn tập bằng cách ghi đè Production.
-- Bài drill tự động `npm run db:restore-drill` chỉ chạy trên Supabase local project `im_crm`: thêm một fixture giả có tên ngẫu nhiên, tạo logical backup, restore vào database disposable có guardrail, so khớp fixture/migration/số bản ghi/RLS rồi xóa database và fixture tạm. CI lưu report JSON 14 ngày. Đây là bằng chứng kỹ thuật cho quy trình logical restore, không thay thế drill từ backup hosted, kiểm tra object Storage, hay quyết định RTO/RPO + Supabase plan.
+- Quyết định ngày 2026-08-10: giữ Supabase Free, không PITR; mục tiêu RPO `24 giờ`, RTO `8 giờ`. Nếu hai mục tiêu này không còn đáp ứng nghiệp vụ thì phải dừng và xem lại gói dịch vụ trước Production.
+- Workflow `.github/workflows/free-tier-backup.yml` chạy lúc `18:15 UTC` mỗi ngày sau khi `FREE_BACKUP_ENABLED=true`. Lần đầu phải chạy thủ công trên Preview; lịch vẫn bị skip khi biến này chưa bật.
+- Backup database bám quy trình Supabase CLI: `roles.sql`, `schema.sql`, `data.sql` và migration history. Storage API tải riêng hai bucket private `documents` và `document-extracted`; service role chỉ tồn tại trong GitHub secret và script không ghi/xóa object nguồn.
+- Manifest lưu project ref, môi trường, kích thước và SHA-256. Toàn bundle được mã hóa AES-256-GCM trước khi artifact được upload; GitHub giữ artifact 14 ngày. Chỉ file mã hóa được phép rời runner. Recovery copy của key phải nằm trong password manager ngoài GitHub.
+- Workflow giải mã tạm và kiểm tra toàn bộ checksum ngay sau tạo backup. Việc verify chỉ chứng minh bundle đọc được, chưa thay thế restore drill.
+- Mỗi quý và trước Production, tải một artifact đã verify, restore vào Supabase project cô lập/disposable, chạy migration check, đếm bản ghi, đăng nhập năm vai trò, kiểm tra RLS và so khớp số object/checksum Storage. Không diễn tập bằng cách ghi đè Preview hoặc Production; dọn project đích sau khi lưu bằng chứng đã khử PII/secret.
+- Khi restore sang project mới phải cấu hình lại Auth URL/template, API keys, Vercel env, cron và mọi platform setting không nằm trong database. Upload object phải qua Storage API/S3, không chèn trực tiếp `storage.objects` để tránh file mồ côi.
+- Bài drill tự động `npm run db:restore-drill` vẫn chỉ chạy trên Supabase local project `im_crm`: tạo logical backup, restore database disposable, so khớp fixture/migration/số bản ghi/RLS rồi dọn. Đây là regression test kỹ thuật; cổng M7.2 chỉ hoàn tất sau lần restore artifact Free thật vào project hosted cô lập kèm Storage.
 
 ## 8. Phân loại sự cố
 
@@ -93,12 +96,12 @@ Không ghi token, password, nội dung khách hàng hoặc file tài liệu vào
 
 - Commit SHA / PR / Preview URL / Production deployment ID.
 - Supabase Preview ref / Production ref (chỉ ID, không secret).
-- Migration được apply; backup timestamp UTC; RTO/RPO đã duyệt.
+- Migration được apply; timestamp/manifest của logical backup mã hóa; RPO 24 giờ/RTO 8 giờ đã duyệt.
 - Kết quả CI, UAT ba role, Lighthouse/Speed Insights, smoke test sau deploy.
 - Release owner, database owner, incident commander; thời gian bắt đầu/kết thúc UTC.
 - Quyết định release/rollback và vấn đề còn lại.
 
 ## Tham chiếu nền tảng
 
-- Supabase: Database Migrations, Database Backups và Local development workflow.
+- Supabase: [Database Backups](https://supabase.com/docs/guides/platform/backups), [Backup and Restore using the CLI](https://supabase.com/docs/guides/platform/migrating-within-supabase/backup-restore) và [Download Storage Objects](https://supabase.com/docs/guides/storage/management/download-objects).
 - Vercel: Managing Deployments, Preview/Production environments và Instant Rollback.

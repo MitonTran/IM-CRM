@@ -23,7 +23,9 @@
     "db:stop": "supabase stop",
     "db:reset": "supabase db reset",
     "db:test": "supabase test db",
-    "db:restore-drill": "node scripts/restore-drill.mjs"
+    "db:restore-drill": "node scripts/restore-drill.mjs",
+    "backup:free": "node scripts/free-tier-backup.mjs",
+    "backup:free:verify": "node scripts/free-tier-backup-verify.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.4",

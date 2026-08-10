@@ -156,7 +156,16 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Artifact `preview-verification` chứa ba report số đã khử credential: `deployment-smoke.json`, `preview-performance.json`, `preview-lighthouse.json`; không lưu raw DOM, email hoặc mật khẩu.
 - Đối chiếu log Vercel trong 30 phút gần phiên chạy: `0` warning, `0` error, `0` fatal; các request ứng dụng quan sát được trả `200`, ngoài `/robots.txt` `404` dự kiến do Lighthouse. Truy vấn Supabase Logs trong cửa sổ `Last hour` không có API Gateway event `500/502/503/504`. Chỉ các cột thời gian, nguồn và thông điệp sự kiện đã được dùng làm bằng chứng; không chép metadata nền tảng, định danh người dùng, PII hoặc secret vào tài liệu.
 - Trạng thái: automation hiệu năng và quan sát lỗi nghiêm trọng `Pass` trên Preview. Production chưa thay đổi; upload giới hạn `25 MB`, AI/file timeout/fallback và semantic worker vẫn cần negative test riêng.
-- Kiểm tra read-only trang Supabase Database Backups ngày 2026-08-10 xác nhận organization của Preview đang ở gói `Free`; dashboard nêu rõ gói này không có project backup. Vì vậy hosted restore drill sang project cô lập đang `Blocked` cho đến khi Release owner chốt RTO/RPO và chọn Pro/PITR hoặc quy trình logical export mã hóa ngoài Supabase. Không dùng Production để diễn tập.
+- Kiểm tra read-only trang Supabase Database Backups ngày 2026-08-10 xác nhận organization của Preview đang ở gói `Free`; dashboard nêu rõ gói này không có project backup. Release owner sau đó chọn giữ Free với logical export mã hóa, Storage backup riêng, RPO 24 giờ và RTO 8 giờ. Không dùng Production để diễn tập.
+
+### UAT-13 — phương án backup Supabase Free
+
+- Quyết định ngày 2026-08-10: không nâng gói và không dùng PITR. Backup chạy tối đa mỗi 24 giờ, giữ artifact mã hóa 14 ngày; mục tiêu khôi phục trong 8 giờ đối với quy mô MVP.
+- Script backup có guardrail bắt buộc API URL/database URL/project ref cùng một project, chỉ đọc allowlist bucket `documents` và `document-extracted`, xuất roles/schema/data/migration history, ghi checksum và mã hóa AES-256-GCM. File bản rõ nằm trong thư mục tạm và được dọn trong `finally`.
+- Script verify giải mã vào thư mục tạm, xác minh format, project/môi trường, kích thước và SHA-256 của toàn bộ database dump/Storage object rồi dọn bản rõ. Unit test bao phủ project mismatch, path traversal, bucket ngoài allowlist, round-trip mã hóa, key sai và manifest integrity.
+- Workflow `Free tier encrypted backup` có manual dispatch và lịch `18:15 UTC`; lịch bị skip cho đến khi repository variable `FREE_BACKUP_ENABLED=true`. Artifact chỉ nhận file `*.imcrm-backup`, không nhận SQL, object hoặc manifest bản rõ.
+- Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `100/100`, production build Webpack `Pass`; YAML workflow parse `Pass`. Không có migration/database/RLS thay đổi trong nhiệm vụ này.
+- Trạng thái: thiết kế/tooling local `Pass`; backup Preview live và restore vào hosted project disposable vẫn `Blocked` cho đến khi bốn GitHub secrets, ba repository variables và project đích cô lập được cấu hình. Production chưa thay đổi.
 
 ## Smoke test chung
 
