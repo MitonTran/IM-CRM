@@ -48,9 +48,19 @@ function run(command, args, options = {}) {
 }
 
 function runPsql(dbUrl, args, options = {}) {
+  const database = new URL(dbUrl);
   return run("psql", args, {
     ...options,
-    env: { ...options.env, PGDATABASE: dbUrl, PGCONNECT_TIMEOUT: "20" },
+    env: {
+      ...options.env,
+      PGHOST: database.hostname,
+      PGPORT: database.port || "5432",
+      PGUSER: decodeURIComponent(database.username),
+      PGPASSWORD: decodeURIComponent(database.password),
+      PGDATABASE: database.pathname.replace(/^\//, "") || "postgres",
+      PGSSLMODE: database.searchParams.get("sslmode") || "require",
+      PGCONNECT_TIMEOUT: "20",
+    },
   });
 }
 
