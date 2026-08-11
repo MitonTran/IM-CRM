@@ -19,6 +19,20 @@ function invariant(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+function safeDiagnostic(value, environment = process.env) {
+  let diagnostic = typeof value === "string" ? value.trim() : "";
+  for (const name of [
+    "BACKUP_ENCRYPTION_KEY",
+    "RESTORE_DRILL_DB_URL",
+    "RESTORE_DRILL_SERVICE_ROLE_KEY",
+  ]) {
+    const secret = environment[name];
+    if (secret) diagnostic = diagnostic.replaceAll(secret, "***");
+  }
+  diagnostic = diagnostic.replace(/postgres(?:ql)?:\/\/[^\s'"`]+/giu, "[database-url]");
+  return diagnostic.slice(0, 1200);
+}
+
 function run(command, args, options = {}) {
   const result = spawnSync(command, args, {
     encoding: "utf8",
@@ -26,7 +40,10 @@ function run(command, args, options = {}) {
     stdio: options.capture ? ["ignore", "pipe", "pipe"] : "inherit",
   });
   if (result.error) throw result.error;
-  invariant(result.status === 0, `${command} thất bại với mã ${result.status ?? "không xác định"}.`);
+  if (result.status !== 0) {
+    const diagnostic = options.capture ? safeDiagnostic(result.stderr) : "";
+    throw new Error(`${command} thất bại với mã ${result.status ?? "không xác định"}${diagnostic ? `: ${diagnostic}` : ""}.`);
+  }
   return options.capture ? result.stdout.trim() : "";
 }
 
