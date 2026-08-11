@@ -100,7 +100,8 @@ test("Sale điều chỉnh giao dịch trong 24 giờ mà không làm trùng doa
 
   const registration = page.locator("details").filter({ has: page.getByText("Ghi nhận đăng ký mới", { exact: true }) });
   await registration.getByText("Ghi nhận đăng ký mới", { exact: true }).click();
-  await registration.locator('input[name="amountVnd"]').fill("1000000");
+  await registration.getByLabel("Doanh thu VND").fill("1000000");
+  await expect(registration.getByLabel("Doanh thu VND")).toHaveValue("1.000.000");
   await registration.locator('textarea[name="note"]').fill("Giao dịch gốc E2E");
   await registration.getByRole("button", { name: "Ghi nhận giao dịch" }).click();
   await expect(registration.getByRole("status")).toHaveText("Đã ghi nhận giao dịch.");
@@ -108,7 +109,8 @@ test("Sale điều chỉnh giao dịch trong 24 giờ mà không làm trùng doa
 
   const amendment = page.locator("details").filter({ has: page.getByText("Chỉnh sửa giao dịch", { exact: true }) });
   await amendment.getByText("Chỉnh sửa giao dịch", { exact: true }).click();
-  await amendment.locator('input[name="amountVnd"]').fill("1250000");
+  await amendment.getByLabel("Doanh thu VND").fill("1250000");
+  await expect(amendment.getByLabel("Doanh thu VND")).toHaveValue("1.250.000");
   await amendment.locator('input[name="reason"]').fill("Nhập sai số tiền E2E");
   await amendment.getByRole("button", { name: "Lưu bản điều chỉnh" }).click();
   await expect(page.getByText("Đã điều chỉnh giao dịch và giữ lại bản cũ trong lịch sử.", { exact: true })).toBeVisible();
