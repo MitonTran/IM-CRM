@@ -170,6 +170,13 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Hosted restore run `31498309257` ngày 2026-08-11 `Pass` vào project disposable `jflpvpjidblltueeiwmk`: preflight xác nhận target có `0` bảng/user/bucket/object; sau restore có `23` bảng public và cả `23` bật RLS, `36` policy, `15` migration version, `5` Auth user, `2` bucket và `4` Storage object (`2.339 byte`). Cả bốn object được upload qua Storage API rồi tải lại để so khớp kích thước/SHA-256. Report artifact `hosted-restore-drill-report` có digest `sha256:0ff288d3c8c569d4e6a380ab832f82c4663318a0f7fc21ff3dc8f386489dde5c`, hết hạn `2026-08-25T13:55:03Z` và không chứa row data, object path hay secret.
 - Trạng thái: thiết kế/tooling, backup Preview live và restore hosted database/Storage/RLS `Pass`. Còn kiểm tra đăng nhập/phạm vi năm vai trò trên project restore và ký UAT trước khi hoàn tất M7.2. `FREE_BACKUP_ENABLED` tiếp tục để `false` cho đến khi workflow được merge theo chuỗi PR. Production chưa thay đổi.
 
+### UAT-14 — hardening cron và giới hạn upload
+
+- Commit `6672f0d04be4ee4ab648d4a2e02ec65d7f9417dd` tập trung giới hạn file `25 MB` vào một hằng dùng chung cho client/server. File lớn hơn giới hạn bị từ chối ngay trên trình duyệt trước khi tạo metadata hoặc gọi Storage; server schema và constraint/RPC database vẫn là hai lớp kiểm soát bắt buộc.
+- Unit test xác nhận file đúng `25 MB` được chấp nhận, `25 MB + 1 byte` và kích thước rỗng/âm/lẻ bị từ chối. Database test hiện có tiếp tục xác nhận bucket private giới hạn `26.214.400 byte` và RPC trả `document_file_size_invalid` khi vượt một byte.
+- E2E production-like gọi cả `/api/cron/ai-retention` và `/api/cron/document-extraction` khi thiếu header và khi dùng bearer sai; cả bốn request đều trả `401 Unauthorized` trước khi retention/extraction worker có thể chạy.
+- Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `112/112`, production build Webpack `Pass`. Quality workflow `31502542284` pass application, database/restore drill và E2E. Không có migration hoặc thay đổi RLS; Production chưa thay đổi.
+
 ## Smoke test chung
 
 - [x] `/api/health` trả `200`, `{ "status": "ok" }`, `Cache-Control: no-store`.
@@ -177,7 +184,7 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - [ ] Sai email/mật khẩu trả thông báo chung; user khóa không vào CRM.
 - [ ] Đăng xuất hủy phiên; URL bảo vệ quay về login.
 - [ ] Mobile và desktop không vỡ layout; keyboard focus nhìn thấy; loading/empty/error state đọc được.
-- [ ] Cron route từ chối request thiếu/sai `CRON_SECRET`; không chạy retention/extraction bằng request công khai.
+- [x] Cron route từ chối request thiếu/sai `CRON_SECRET`; không chạy retention/extraction bằng request công khai.
 
 ## Sale A
 
@@ -223,7 +230,8 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - [x] Workflow `Preview smoke` đạt và artifact `preview-performance.json` cho `/login`, `/dashboard`, `/customers` đã được lưu.
 - [x] Lighthouse/Speed Insights Preview cho `/login`, `/dashboard`, `/customers` đã lưu kết quả; không có hồi quy nghiêm trọng.
 - [x] Log Vercel/Supabase không có lỗi nghiêm trọng, PII hoặc secret trong các trường bằng chứng đã kiểm tra.
-- [ ] Upload 25 MB bị giới hạn đúng; request AI/file không treo vô hạn.
+- [x] Upload 25 MB bị giới hạn đúng ở client, server, RPC và Storage bucket.
+- [ ] Request AI/file không treo vô hạn.
 
 Bằng chứng automation ngày 2026-08-09 và phiên chốt sau UAT ngày 2026-08-10 nằm tại `docs/18-preview-performance-evidence.md`. Workflow mới nhất `31408335438` đã pass smoke, Playwright performance và Lighthouse cho cả ba route, với Accessibility `1,00`; log Vercel/Supabase cũng đã được đối chiếu theo UAT-12.
 
