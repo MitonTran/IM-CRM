@@ -7,6 +7,12 @@ on:
         description: "Nhập chính xác project ref disposable để cho phép restore"
         required: true
         type: string
+  # Temporary Preview-only bootstrap trigger. Remove after the hosted drill.
+  push:
+    branches:
+      - codex/preview-performance-audit
+    paths:
+      - .github/workflows/hosted-restore-drill.yml
 
 permissions:
   actions: read
@@ -18,7 +24,9 @@ concurrency:
 
 jobs:
   restore:
-    if: inputs.confirm_target_ref == vars.RESTORE_DRILL_PROJECT_REF
+    if: >-
+      (github.event_name == 'workflow_dispatch' && inputs.confirm_target_ref == vars.RESTORE_DRILL_PROJECT_REF) ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/codex/preview-performance-audit')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -26,7 +34,7 @@ jobs:
       BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
       FREE_BACKUP_PROJECT_REF: ${{ vars.FREE_BACKUP_PROJECT_REF }}
       RESTORE_DRILL_PROJECT_REF: ${{ vars.RESTORE_DRILL_PROJECT_REF }}
-      RESTORE_DRILL_CONFIRM_PROJECT_REF: ${{ inputs.confirm_target_ref }}
+      RESTORE_DRILL_CONFIRM_PROJECT_REF: ${{ github.event_name == 'workflow_dispatch' && inputs.confirm_target_ref || vars.RESTORE_DRILL_PROJECT_REF }}
       RESTORE_DRILL_DB_URL: ${{ secrets.RESTORE_DRILL_DB_URL }}
       RESTORE_DRILL_SUPABASE_URL: ${{ secrets.RESTORE_DRILL_SUPABASE_URL }}
       RESTORE_DRILL_SERVICE_ROLE_KEY: ${{ secrets.RESTORE_DRILL_SERVICE_ROLE_KEY }}
