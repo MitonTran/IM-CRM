@@ -18,11 +18,11 @@ const formSchema = z.object({
 });
 
 function friendlyError(message: string) {
-  if (message.includes("ai_daily_quota_exceeded")) return "Bạn đã dùng hết lượt AI hôm nay.";
+  if (message.includes("ai_daily_quota_exceeded")) return "Trợ lý đang bận. Vui lòng thử lại sau.";
   if (message.includes("ai_disabled")) return "Trợ lý AI đang được quản trị viên tạm tắt.";
   if (message.includes("ai_conversation_scope_denied")) return "Bạn không có quyền truy cập hội thoại này.";
   if (message.includes("ai_question_invalid")) return "Câu hỏi cần từ 2 đến 2.000 ký tự.";
-  if (message.includes("model_invalid_output")) return "Nhà cung cấp AI trả về dữ liệu chưa đúng định dạng. Hãy thử lại.";
+  if (message.includes("model_invalid_output")) return "Câu trả lời chưa hoàn tất. Vui lòng thử lại.";
   return "Không thể hoàn tất câu trả lời AI. Vui lòng thử lại sau.";
 }
 
@@ -44,11 +44,11 @@ export async function askAiAssistantAction(
   const { data: claims, error: authError } = await supabase.auth.getClaims();
   const userId = String(claims?.claims?.sub ?? "");
   if (authError || !userId) return { ok: false, message: "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại." };
-  if (!hasAiProviderEnv()) return { ok: false, message: "Chưa cấu hình AI_PROVIDER hoặc API key tương ứng trên máy chủ." };
+  if (!hasAiProviderEnv()) return { ok: false, message: "Trợ lý đang tạm gián đoạn. Vui lòng liên hệ quản trị viên." };
 
   let admin: ReturnType<typeof createAdminClient>;
   try { admin = createAdminClient(); }
-  catch { return { ok: false, message: "Máy chủ chưa hoàn tất cấu hình AI an toàn." }; }
+  catch { return { ok: false, message: "Trợ lý đang tạm gián đoạn. Vui lòng liên hệ quản trị viên." }; }
 
   const startedAt = Date.now();
   let assistantMessageId: string | null = null;
@@ -101,7 +101,7 @@ export async function askAiAssistantAction(
     });
     if (completion.error) throw new Error(completion.error.message);
     revalidatePath("/ai");
-    return { ok: true, message: answer.value.insufficient_data ? "Đã trả lời với cảnh báo dữ liệu chưa đủ." : "Đã hoàn tất câu trả lời.", conversationId, responseId: assistantMessageId };
+    return { ok: true, message: answer.value.insufficient_data ? "Đã trả lời, nhưng có thể chưa đủ dữ liệu." : "Đã trả lời.", conversationId, responseId: assistantMessageId };
   } catch (error) {
     if (assistantMessageId) {
       try {

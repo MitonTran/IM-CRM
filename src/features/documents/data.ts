@@ -20,7 +20,7 @@ function mapDocument(row: RawDocument, role: AppRole, teamId: string | null): Do
   const version = Array.isArray(row.document_versions) ? row.document_versions[0] : row.document_versions;
   return {
     id: row.id, title: row.title, scope: row.scope_type,
-    scopeName: row.scope_type === "organization" ? "Toàn công ty" : row.scope_type === "team" ? row.teams?.name ?? "Team" : row.profiles?.full_name ?? "Cá nhân",
+    scopeName: row.scope_type === "organization" ? "Toàn công ty" : row.scope_type === "team" ? row.teams?.name ?? "Nhóm" : row.profiles?.full_name ?? "Cá nhân",
     folderName: row.document_folders?.name ?? null, status: row.status, updatedAt: row.updated_at,
     canManage: canManage(role, teamId, row),
     currentVersion: version ? { id: version.id, versionNo: version.version_no, fileName: version.original_file_name, mimeType: version.mime_type, sizeBytes: Number(version.size_bytes), extractionStatus: version.extraction_status, embeddingStatus: version.embedding_status } : null,

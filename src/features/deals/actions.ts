@@ -20,14 +20,14 @@ function vietnamDateTime(value: string) {
 }
 
 function friendlyError(message: string) {
-  if (message.includes("deal_amend_window_expired")) return "Sale chỉ được chỉnh sửa giao dịch do mình tạo trong vòng 24 giờ.";
-  if (message.includes("deal_amend_inactive")) return "Giao dịch này không còn active hoặc đã được điều chỉnh.";
+  if (message.includes("deal_amend_window_expired")) return "Bạn chỉ được chỉnh sửa giao dịch do mình tạo trong 24 giờ.";
+  if (message.includes("deal_amend_inactive")) return "Giao dịch này không còn hiệu lực hoặc đã được chỉnh sửa.";
   if (message.includes("deal_amend_already_replaced")) return "Giao dịch đã có bản thay thế. Hãy tải lại hồ sơ khách.";
   if (message.includes("deal_amend_no_changes")) return "Chưa có thông tin giao dịch nào thay đổi.";
   if (message.includes("deal_amend_reason_required")) return "Cần nhập lý do điều chỉnh từ 3 đến 500 ký tự.";
   if (message.includes("deal_create_denied") || message.includes("deal_void_denied") || message.includes("deal_amend_denied")) return "Bạn không có quyền thực hiện thao tác này.";
-  if (message.includes("customer_owner_required")) return "Khách cần được giao cho một Sale trước khi đăng ký.";
-  if (message.includes("idempotency")) return "Yêu cầu giao dịch bị trùng. Hãy tải lại chi tiết khách.";
+  if (message.includes("customer_owner_required")) return "Khách hàng cần có tư vấn viên phụ trách trước khi ghi nhận giao dịch.";
+  if (message.includes("idempotency")) return "Giao dịch đang được xử lý. Hãy tải lại trang trước khi thử lại.";
   if (message.includes("registered_at")) return "Ngày đăng ký chưa hợp lệ.";
   return "Không thể lưu giao dịch. Vui lòng kiểm tra dữ liệu và thử lại.";
 }
@@ -83,16 +83,16 @@ export async function amendDealAction(_: DealActionState, formData: FormData): P
   });
   if (error) return { ok: false, message: friendlyError(error.message) };
   revalidateDealViews();
-  return { ok: true, message: "Đã điều chỉnh giao dịch và giữ lại bản cũ trong lịch sử.", dealId: String(data) };
+  return { ok: true, message: "Đã lưu thay đổi giao dịch.", dealId: String(data) };
 }
 
 export async function voidDealAction(_: DealActionState, formData: FormData): Promise<DealActionState> {
   const parsed = z.object({ dealId: z.uuid(), reason: z.string().trim().min(3).max(500) }).safeParse(Object.fromEntries(formData.entries()));
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Cần nhập lý do vô hiệu hóa." };
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Cần nhập lý do hủy." };
   const supabase = await authenticatedClient();
   if (!supabase) return { ok: false, message: "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại." };
   const { error } = await supabase.rpc("void_deal", { target_deal_id: parsed.data.dealId, reason: parsed.data.reason });
   if (error) return { ok: false, message: friendlyError(error.message) };
   revalidateDealViews();
-  return { ok: true, message: "Đã vô hiệu hóa giao dịch." };
+  return { ok: true, message: "Đã hủy hiệu lực giao dịch." };
 }

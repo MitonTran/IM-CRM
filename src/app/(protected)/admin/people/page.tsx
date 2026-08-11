@@ -6,38 +6,38 @@ import { loadAuthEmailDirectory } from "@/features/admin/auth-directory";
 import { createClient } from "@/lib/supabase/server";
 import { createTeam, invitePerson, managePerson, manageTeam } from "./actions";
 
-export const metadata = { title: "Nhân sự và team" };
+export const metadata = { title: "Nhân sự và nhóm" };
 
 const errors: Record<string, string> = {
-  "team-invalid": "Tên team cần từ 2 đến 80 ký tự.",
-  "team-create": "Không thể tạo team. Có thể tên team đã tồn tại.",
+  "team-invalid": "Tên nhóm cần từ 2 đến 80 ký tự.",
+  "team-create": "Không thể tạo nhóm. Có thể tên nhóm đã tồn tại.",
   "invite-invalid": "Thông tin mời chưa hợp lệ.",
-  "team-required": "Leader và Sale cần được gán một team.",
-  "invite-failed": "Không thể gửi lời mời. Kiểm tra email hoặc cấu hình máy chủ.",
-  "invite-directory": "Không thể kiểm tra danh sách Auth lúc này. Không có quyền nào được thay đổi.",
+  "team-required": "Trưởng nhóm và tư vấn viên cần được gán một nhóm.",
+  "invite-failed": "Không thể gửi lời mời. Vui lòng kiểm tra email và thử lại.",
+  "invite-directory": "Không thể kiểm tra danh sách tài khoản lúc này. Vui lòng thử lại sau.",
   "invite-exists": "Email này đã thuộc một tài khoản được xác nhận hoặc đang hoạt động.",
-  "invite-integrity": "Kết quả Auth không khớp tài khoản đang phục hồi. Hồ sơ chưa được kích hoạt.",
-  "invite-pending": "Supabase chưa gửi được email. Quyền đã được lưu ở trạng thái chưa kích hoạt; hãy gửi lại cùng email sau ít phút.",
-  "profile-update": "Email có thể đã được gửi nhưng hồ sơ vẫn chưa kích hoạt. Hãy gửi lại cùng thông tin để phục hồi an toàn.",
-  team_manage_input_invalid: "Thông tin team chưa hợp lệ.",
-  team_manage_not_found: "Team không còn tồn tại hoặc vừa thay đổi.",
-  team_manage_active_members: "Hãy khóa hoặc chuyển toàn bộ thành viên hoạt động trước khi ngừng team.",
-  team_manage_active_customers: "Hãy chuyển hoặc xóa mềm toàn bộ khách đang thuộc team trước khi ngừng team.",
-  team_manage_name_taken: "Tên team này đã được sử dụng.",
+  "invite-integrity": "Không thể khôi phục tài khoản này. Vui lòng kiểm tra email.",
+  "invite-pending": "Chưa gửi được email. Vui lòng thử gửi lại sau ít phút.",
+  "profile-update": "Tài khoản chưa được kích hoạt. Vui lòng gửi lại lời mời.",
+  team_manage_input_invalid: "Thông tin nhóm chưa hợp lệ.",
+  team_manage_not_found: "Nhóm không còn tồn tại hoặc vừa thay đổi.",
+  team_manage_active_members: "Hãy khóa hoặc chuyển toàn bộ thành viên hoạt động trước khi ngừng nhóm.",
+  team_manage_active_customers: "Hãy chuyển hoặc ngừng theo dõi toàn bộ khách hàng trước khi ngừng nhóm.",
+  team_manage_name_taken: "Tên nhóm này đã được sử dụng.",
   profile_manage_input_invalid: "Thông tin thành viên chưa hợp lệ.",
   profile_manage_not_found: "Thành viên không còn tồn tại hoặc vừa thay đổi.",
-  profile_manage_team_required: "Leader và Sale luôn phải thuộc một team.",
-  profile_manage_team_invalid: "Không thể kích hoạt thành viên trong một team đã ngừng hoạt động.",
-  profile_manage_self_privileges: "Bạn có thể đổi tên mình nhưng không thể tự hạ quyền, chuyển team hoặc khóa phiên Admin hiện tại.",
-  profile_manage_active_customers: "Hãy chuyển toàn bộ khách đang do Sale này phụ trách trước khi đổi role, chuyển team hoặc khóa.",
-  profile_manage_pending_tasks: "Hãy hoàn thành, hủy hoặc chuyển các follow-up đang mở trước khi đổi role, chuyển team hoặc khóa Sale.",
+  profile_manage_team_required: "Trưởng nhóm và tư vấn viên luôn phải thuộc một nhóm.",
+  profile_manage_team_invalid: "Không thể kích hoạt thành viên trong một nhóm đã ngừng hoạt động.",
+  profile_manage_self_privileges: "Bạn có thể đổi tên mình nhưng không thể tự đổi vai trò, chuyển nhóm hoặc khóa tài khoản đang dùng.",
+  profile_manage_active_customers: "Hãy chuyển toàn bộ khách hàng đang do tư vấn viên này phụ trách trước khi đổi vai trò, chuyển nhóm hoặc khóa.",
+  profile_manage_pending_tasks: "Hãy hoàn thành, hủy hoặc chuyển các lịch chăm sóc đang mở trước khi đổi vai trò, chuyển nhóm hoặc khóa tư vấn viên.",
   "management-failed": "Không thể lưu thay đổi quản trị. Dữ liệu hiện tại vẫn được giữ nguyên.",
 };
 
 const statuses: Record<string, string> = {
-  "invite-sent": "Email mời đã được gửi và hồ sơ quyền đã được kích hoạt.",
-  "team-created": "Đã tạo team mới.",
-  "team-saved": "Đã lưu tên và trạng thái team.",
+  "invite-sent": "Đã gửi email mời thành viên.",
+  "team-created": "Đã tạo nhóm mới.",
+  "team-saved": "Đã lưu tên và trạng thái nhóm.",
   "person-saved": "Đã lưu hồ sơ và trạng thái thành viên.",
 };
 
@@ -62,10 +62,10 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
   return (
     <div className="mx-auto max-w-[1380px]">
       <div>
-        <p className="text-sm font-semibold text-[#708078]">Quản trị hệ thống</p>
-        <h1 className="mt-2 text-3xl font-bold tracking-[-.035em]">Nhân sự & team</h1>
+        <p className="text-sm font-semibold text-[#708078]">Quản lý người dùng</p>
+        <h1 className="mt-2 text-3xl font-bold tracking-[-.035em]">Nhân sự & nhóm</h1>
         <p className="mt-3 max-w-3xl text-sm leading-6 text-[#718078]">
-          Mời, đổi tên, phân quyền và khóa mềm tài khoản hoặc team. Không có thao tác xóa cứng; toàn bộ lịch sử và audit được giữ lại.
+          Mời thành viên, phân công vai trò và quản lý trạng thái làm việc. Dữ liệu cũ luôn được giữ lại.
         </p>
       </div>
 
@@ -85,15 +85,15 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
         <section className="card-shadow rounded-[24px] border border-[#e0e7e2] bg-white p-6">
           <div className="flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-[14px] bg-[#e8f0df] text-[#456044]"><Plus size={18} /></span>
-            <div><h2 className="font-bold">Team</h2><p className="mt-1 text-xs text-[#85918b]">Ngừng hoạt động thay cho xóa; team còn người hoặc khách sẽ bị chặn.</p></div>
+            <div><h2 className="font-bold">Nhóm</h2><p className="mt-1 text-xs text-[#85918b]">Nhóm đang có thành viên hoặc khách hàng cần được sắp xếp trước khi ngừng hoạt động.</p></div>
           </div>
           <form action={createTeam} className="mt-6 flex gap-2">
-            <Input name="name" required minLength={2} maxLength={80} placeholder="Ví dụ: Team Tư vấn 1" />
+            <Input name="name" required minLength={2} maxLength={80} placeholder="Ví dụ: Nhóm Tư vấn 1" />
             <Button type="submit" className="shrink-0">Tạo</Button>
           </form>
           <div className="mt-7 space-y-3">
             {allTeams.map((team) => (
-              <article key={team.id} aria-label={`Quản lý team ${team.name}`} className="rounded-2xl border border-[#e5ebe7] p-3">
+              <article key={team.id} aria-label={`Quản lý nhóm ${team.name}`} className="rounded-2xl border border-[#e5ebe7] p-3">
                 <form action={manageTeam} className="flex flex-col gap-2 sm:flex-row">
                   <input type="hidden" name="teamId" value={team.id} />
                   <input type="hidden" name="isActive" value={String(team.is_active)} />
@@ -118,20 +118,20 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                 </div>
               </article>
             ))}
-            {!allTeams.length && <p className="rounded-xl bg-[#f6f8f6] px-4 py-5 text-center text-sm text-[#85918b]">Chưa có team nào.</p>}
+            {!allTeams.length && <p className="rounded-xl bg-[#f6f8f6] px-4 py-5 text-center text-sm text-[#85918b]">Chưa có nhóm nào.</p>}
           </div>
         </section>
 
         <section className="card-shadow rounded-[24px] border border-[#e0e7e2] bg-white p-6">
           <div className="flex items-center gap-3">
             <span className="grid size-10 place-items-center rounded-[14px] bg-[#e1eee8] text-[#285b47]"><MailPlus size={18} /></span>
-            <div><h2 className="font-bold">Mời thành viên</h2><p className="mt-1 text-xs text-[#85918b]">Email kích hoạt được gửi từ Supabase Auth.</p></div>
+            <div><h2 className="font-bold">Mời thành viên</h2><p className="mt-1 text-xs text-[#85918b]">Thành viên sẽ nhận email để tạo mật khẩu.</p></div>
           </div>
           <form action={invitePerson} className="mt-6 grid gap-4 sm:grid-cols-2">
             <label className="text-sm font-semibold">Họ và tên<Input className="mt-2" name="fullName" required minLength={2} maxLength={120} /></label>
             <label className="text-sm font-semibold">Email<Input className="mt-2" name="email" type="email" required /></label>
-            <label className="text-sm font-semibold">Vai trò<select name="role" defaultValue="sale" className={`${selectClass} mt-2`}><option value="sale">Nhân viên Sale</option><option value="leader">Sale Leader</option><option value="admin">Quản trị viên</option></select></label>
-            <label className="text-sm font-semibold">Team<select name="teamId" defaultValue="" className={`${selectClass} mt-2`}><option value="">Không thuộc team</option>{activeTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label>
+            <label className="text-sm font-semibold">Vai trò<select name="role" defaultValue="sale" className={`${selectClass} mt-2`}><option value="sale">Tư vấn viên</option><option value="leader">Trưởng nhóm</option><option value="admin">Quản trị viên</option></select></label>
+            <label className="text-sm font-semibold">Nhóm<select name="teamId" defaultValue="" className={`${selectClass} mt-2`}><option value="">Không thuộc nhóm</option>{activeTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label>
             <Button type="submit" className="sm:col-span-2">Gửi lời mời</Button>
           </form>
         </section>
@@ -156,7 +156,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                   <label className="text-xs font-bold uppercase tracking-[.08em] text-[#7d8a83]">
                     <span className="flex flex-wrap items-center gap-x-1.5 gap-y-1">
                       <span>Họ tên thành viên</span>
-                      <span className="break-all font-medium normal-case tracking-normal text-[#607169]">— {authEmail ?? "Chưa có email Auth"}</span>
+                      <span className="break-all font-medium normal-case tracking-normal text-[#607169]">— {authEmail ?? "Chưa có email đăng nhập"}</span>
                     </span>
                     <Input aria-label="Họ tên thành viên" className="mt-2 normal-case tracking-normal text-[#17251e]" name="fullName" required minLength={2} maxLength={120} defaultValue={person.full_name} />
                   </label>
@@ -164,16 +164,16 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                     Vai trò
                     {isSelf && <input type="hidden" name="role" value={person.role} />}
                     <select name="role" defaultValue={person.role} disabled={isSelf} className={`${selectClass} mt-2 normal-case tracking-normal text-[#17251e]`}>
-                      <option value="sale">Nhân viên Sale</option>
-                      <option value="leader">Sale Leader</option>
+                      <option value="sale">Tư vấn viên</option>
+                      <option value="leader">Trưởng nhóm</option>
                       <option value="admin">Quản trị viên</option>
                     </select>
                   </label>
                   <label className="text-xs font-bold uppercase tracking-[.08em] text-[#7d8a83]">
-                    Team
+                    Nhóm
                     {isSelf && <input type="hidden" name="teamId" value={person.team_id ?? ""} />}
                     <select name="teamId" defaultValue={person.team_id ?? ""} disabled={isSelf} className={`${selectClass} mt-2 normal-case tracking-normal text-[#17251e]`}>
-                      <option value="">Không thuộc team (Admin)</option>
+                      <option value="">Không thuộc nhóm (Quản trị viên)</option>
                       {allTeams.map((team) => <option key={team.id} value={team.id} disabled={!team.is_active}>{team.name}{team.is_active ? "" : " · đã ngừng"}</option>)}
                     </select>
                   </label>
@@ -182,7 +182,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
                 <div className="mt-4 flex flex-col gap-3 border-t border-[#edf1ee] pt-4 sm:flex-row sm:items-center sm:justify-between">
                   <div className="flex items-center gap-3">
                     <span className={`whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-bold uppercase ${person.is_active ? "bg-[#eaf2df] text-[#4c7044]" : "bg-[#f0f2f1] text-[#87928c]"}`}>{person.is_active ? "Hoạt động" : "Không hoạt động"}</span>
-                    {isSelf && <p className="text-xs text-[#87928c]">Phiên Admin hiện tại chỉ được đổi tên.</p>}
+                    {isSelf && <p className="text-xs text-[#87928c]">Bạn chỉ có thể đổi tên tài khoản đang sử dụng.</p>}
                   </div>
                   <form action={managePerson}>
                     <input type="hidden" name="userId" value={person.id} />
@@ -202,7 +202,7 @@ export default async function PeoplePage({ searchParams }: { searchParams: Promi
         </div>
         <div className="border-t border-[#edf1ee] bg-[#fafbfa] px-6 py-4 text-xs leading-5 text-[#74827b]">
           <UserRoundCog className="mr-2 inline" size={15} />
-          Trước khi khóa hoặc chuyển team một Sale, hãy chuyển khách và xử lý follow-up đang mở. Hệ thống sẽ chặn nếu lịch sử nghiệp vụ có nguy cơ bị bỏ rơi.
+          Trước khi khóa hoặc chuyển nhóm một tư vấn viên, hãy chuyển khách hàng và xử lý các lịch chăm sóc đang mở.
         </div>
       </section>
     </div>

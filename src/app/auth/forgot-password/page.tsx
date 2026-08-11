@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 const errorMessages: Record<string, string> = {
   "invalid-email": "Vui lòng nhập email hợp lệ.",
-  "not-configured": "Dự án chưa được kết nối Supabase.",
+  "not-configured": "Hệ thống chưa sẵn sàng. Vui lòng liên hệ quản trị viên.",
   "request-failed": "Không thể gửi liên kết lúc này. Vui lòng thử lại sau.",
 };
 
@@ -22,10 +22,10 @@ export default async function ForgotPasswordPage({ searchParams }: { searchParam
         <Brand />
         <div className="mt-10 flex size-12 items-center justify-center rounded-2xl bg-[#e7f1d3] text-[#315f43]"><Mail size={22} /></div>
         <h1 className="mt-5 text-3xl font-bold tracking-[-.035em]">Đặt lại mật khẩu</h1>
-        <p className="mt-3 text-sm leading-6 text-[#718078]">Nhập email tài khoản. Nếu email hợp lệ, hệ thống sẽ gửi một liên kết đặt mật khẩu an toàn.</p>
+        <p className="mt-3 text-sm leading-6 text-[#718078]">Nhập email tài khoản để nhận liên kết tạo mật khẩu mới.</p>
 
         {error && <div role="alert" className="mt-6 rounded-xl border border-[#efc9c1] bg-[#fff3f0] px-4 py-3 text-sm text-[#9a3d30]">{errorMessages[error] ?? "Không thể xử lý yêu cầu."}</div>}
-        {status === "sent" && <div role="status" className="mt-6 rounded-xl border border-[#bddbc8] bg-[#eff9f2] px-4 py-3 text-sm leading-6 text-[#286342]">Nếu email thuộc tài khoản hợp lệ, liên kết đặt mật khẩu đã được gửi. Hãy kiểm tra cả thư mục Spam.</div>}
+        {status === "sent" && <div role="status" className="mt-6 rounded-xl border border-[#bddbc8] bg-[#eff9f2] px-4 py-3 text-sm leading-6 text-[#286342]">Hãy kiểm tra hộp thư và cả thư mục Spam để mở liên kết đặt mật khẩu.</div>}
 
         <form action={requestPasswordReset} className="mt-7 space-y-5">
           <label className="block text-sm font-semibold text-[#32483f]">Email

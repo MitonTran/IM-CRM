@@ -71,7 +71,6 @@ export type CustomerDetail = CustomerListItem & {
   deals: DealItem[];
   aiAnalyses: AiCustomerAnalysisItem[];
   aiEnabled: boolean;
-  aiProviderName: string;
 };
 
 export type CustomerOption = { id: string; name: string };

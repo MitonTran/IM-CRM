@@ -19,11 +19,11 @@ async function authenticatedClient() {
 }
 function friendlyError(message: string) {
   if (message.includes("customer_duplicate") || message.includes("duplicate key")) return "Số điện thoại hoặc email đã tồn tại trong hệ thống.";
-  if (message.includes("owner_team_mismatch")) return "Sale được chọn không thuộc team này.";
+  if (message.includes("owner_team_mismatch")) return "Tư vấn viên được chọn không thuộc nhóm này.";
   if (message.includes("status_reason_required")) return "Cần nhập lý do khi khách đã mất hoặc không phù hợp.";
   if (message.includes("active_deal_required_for_won")) return "Hãy ghi nhận giao dịch để chuyển khách sang Đã chốt.";
   if (message.includes("follow_up_time") || message.includes("new_due_time")) return "Thời gian chăm sóc phải nằm trong tương lai.";
-  if (message.includes("edit_window_closed")) return "Thời hạn sửa activity của Sale đã kết thúc.";
+  if (message.includes("edit_window_closed")) return "Đã hết thời hạn chỉnh sửa hoạt động.";
   if (message.includes("denied") || message.includes("not_authorized")) return "Bạn không có quyền thực hiện thao tác này.";
   return "Không thể lưu thay đổi. Vui lòng kiểm tra dữ liệu và thử lại.";
 }
@@ -82,7 +82,7 @@ export async function deleteCustomerAction(_: CustomerActionState, formData: For
   const { error } = await supabase.rpc("soft_delete_customer", { target_customer_id: parsed.data.customerId, delete_reason: parsed.data.reason });
   if (error) return { ok: false, message: friendlyError(error.message) };
   revalidatePath("/customers");
-  return { ok: true, message: "Đã xóa mềm khách hàng." };
+  return { ok: true, message: "Đã ngừng theo dõi khách hàng." };
 }
 
 export async function setCustomerTagsAction(_: CustomerActionState, formData: FormData): Promise<CustomerActionState> {
@@ -111,11 +111,11 @@ export async function recordActivityAction(_: CustomerActionState, formData: For
     content: nullableText(4000), occurredAt: z.string(), nextAction: nullableText(500),
     followUpAt: z.string().optional(), priority: z.enum(CUSTOMER_PRIORITIES),
   }).safeParse(formObject(formData));
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Activity chưa hợp lệ." };
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Hoạt động chăm sóc chưa hợp lệ." };
   const occurredAt = parsed.data.occurredAt ? vietnamDateTime(parsed.data.occurredAt) : new Date().toISOString();
   const followUpAt = vietnamDateTime(parsed.data.followUpAt || null);
-  if (!occurredAt) return { ok: false, message: "Thời gian activity chưa hợp lệ." };
-  if (parsed.data.followUpAt && !followUpAt) return { ok: false, message: "Thời gian follow-up chưa hợp lệ." };
+  if (!occurredAt) return { ok: false, message: "Thời gian chăm sóc chưa hợp lệ." };
+  if (parsed.data.followUpAt && !followUpAt) return { ok: false, message: "Thời gian lịch chăm sóc chưa hợp lệ." };
   const supabase = await authenticatedClient();
   if (!supabase) return { ok: false, message: "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại." };
   const { error } = await supabase.rpc("record_activity_with_follow_up", {
@@ -130,7 +130,7 @@ export async function recordActivityAction(_: CustomerActionState, formData: For
 
 export async function manageFollowUpTaskAction(_: CustomerActionState, formData: FormData): Promise<CustomerActionState> {
   const parsed = z.object({ taskId: z.uuid(), action: z.enum(["complete", "cancel", "reschedule"]), reason: z.string().trim().min(3).max(500), dueAt: z.string().optional() }).safeParse(formObject(formData));
-  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Thao tác follow-up chưa hợp lệ." };
+  if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Lịch chăm sóc chưa hợp lệ." };
   const newDueAt = vietnamDateTime(parsed.data.dueAt || null);
   if (parsed.data.action === "reschedule" && !newDueAt) return { ok: false, message: "Hãy chọn lịch mới hợp lệ." };
   const supabase = await authenticatedClient();
@@ -138,5 +138,5 @@ export async function manageFollowUpTaskAction(_: CustomerActionState, formData:
   const { error } = await supabase.rpc("manage_follow_up_task", { target_task_id: parsed.data.taskId, task_action: parsed.data.action, task_reason: parsed.data.reason, new_due_at: newDueAt });
   if (error) return { ok: false, message: friendlyError(error.message) };
   revalidatePath("/customers");
-  return { ok: true, message: parsed.data.action === "reschedule" ? "Đã dời lịch." : parsed.data.action === "complete" ? "Đã hoàn thành follow-up." : "Đã hủy follow-up." };
+  return { ok: true, message: parsed.data.action === "reschedule" ? "Đã dời lịch." : parsed.data.action === "complete" ? "Đã hoàn thành lịch chăm sóc." : "Đã hủy lịch chăm sóc." };
 }

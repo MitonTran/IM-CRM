@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 const errorMessages: Record<string, string> = {
   credentials: "Email hoặc mật khẩu chưa đúng.",
   inactive: "Tài khoản chưa được kích hoạt. Vui lòng liên hệ quản trị viên.",
-  "not-configured": "Dự án chưa được kết nối Supabase.",
+  "not-configured": "Hệ thống chưa sẵn sàng. Vui lòng liên hệ quản trị viên.",
   "recovery-expired": "Liên kết đặt mật khẩu không hợp lệ hoặc đã hết hạn. Vui lòng yêu cầu liên kết mới.",
 };
 
@@ -42,7 +42,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <h1 className="font-[family-name:var(--font-display)] text-5xl leading-[1.12] tracking-[-.035em]">Chăm đúng khách.<br />Đúng lúc. Cùng một đội.</h1>
           <p className="mt-6 max-w-lg text-base leading-7 text-emerald-50/75">Theo dõi hành trình khách hàng, lịch chăm sóc và hiệu quả kinh doanh trong một không gian rõ ràng.</p>
           <div className="mt-10 grid grid-cols-2 gap-3 text-sm text-emerald-50/90">
-            {["Dữ liệu theo đúng quyền", "Lịch sử luôn rõ ràng", "KPI từ hoạt động thật", "AI chỉ hỗ trợ quyết định"].map((item) => (
+            {["Thông tin đúng người phụ trách", "Lịch sử chăm sóc rõ ràng", "Kết quả cập nhật theo thực tế", "Trợ lý AI hỗ trợ công việc"].map((item) => (
               <div key={item} className="flex items-center gap-2.5"><CheckCircle2 size={17} className="text-[#c5dc8c]" />{item}</div>
             ))}
           </div>

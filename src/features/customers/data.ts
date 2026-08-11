@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { AppRole } from "@/lib/access";
 import { aiCustomerAnalysisSchema, type AiCustomerAnalysisItem } from "@/features/ai/schema";
-import { AI_PROVIDER_LABELS, getAiProvider } from "@/lib/env";
 import type { ActivityItem, CustomerDetail, CustomerListItem, CustomerPageData, DealItem, FollowUpTask } from "./types";
 import type { CustomerQuery } from "./query";
 
@@ -110,9 +109,7 @@ export async function getCustomerDetail(customerId: string): Promise<CustomerDet
     const parsedResult = aiCustomerAnalysisSchema.safeParse(row.result);
     return { id: row.id, status: row.status, result: parsedResult.success ? parsedResult.data : null, model: row.model, totalTokens: row.total_tokens, latencyMs: row.latency_ms, errorCode: row.error_code, requestedByName: row.profiles?.full_name ?? "Thành viên", createdAt: row.created_at } satisfies AiCustomerAnalysisItem;
   });
-  let aiProviderName = "Chưa cấu hình";
-  try { aiProviderName = AI_PROVIDER_LABELS[getAiProvider()]; } catch { /* Hiển thị trạng thái an toàn trong UI. */ }
-  return { ...rowToList(raw), sourceId: raw.source_id, statusReason: raw.status_reason ?? null, noteSummary: raw.note_summary ?? null, tags: (raw.customer_tag_links ?? []).flatMap((link) => link.customer_tags ? [link.customer_tags] : []), activities, followUps, deals, aiAnalyses, aiEnabled: aiSettingsResult.data?.is_enabled ?? false, aiProviderName };
+  return { ...rowToList(raw), sourceId: raw.source_id, statusReason: raw.status_reason ?? null, noteSummary: raw.note_summary ?? null, tags: (raw.customer_tag_links ?? []).flatMap((link) => link.customer_tags ? [link.customer_tags] : []), activities, followUps, deals, aiAnalyses, aiEnabled: aiSettingsResult.data?.is_enabled ?? false };
 }
 
 export const CUSTOMER_PAGE_SIZE = PAGE_SIZE;
