@@ -1,0 +1,57 @@
+name: Hosted restore drill
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_target_ref:
+        description: "Nhập chính xác project ref disposable để cho phép restore"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+concurrency:
+  group: hosted-restore-drill
+  cancel-in-progress: false
+
+jobs:
+  restore:
+    if: inputs.confirm_target_ref == vars.RESTORE_DRILL_PROJECT_REF
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      BACKUP_DIRECTORY: test-results/hosted-restore/input
+      BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+      FREE_BACKUP_PROJECT_REF: ${{ vars.FREE_BACKUP_PROJECT_REF }}
+      RESTORE_DRILL_PROJECT_REF: ${{ vars.RESTORE_DRILL_PROJECT_REF }}
+      RESTORE_DRILL_CONFIRM_PROJECT_REF: ${{ inputs.confirm_target_ref }}
+      RESTORE_DRILL_DB_URL: ${{ secrets.RESTORE_DRILL_DB_URL }}
+      RESTORE_DRILL_SUPABASE_URL: ${{ secrets.RESTORE_DRILL_SUPABASE_URL }}
+      RESTORE_DRILL_SERVICE_ROLE_KEY: ${{ secrets.RESTORE_DRILL_SERVICE_ROLE_KEY }}
+      RESTORE_DRILL_REPORT_PATH: test-results/hosted-restore/report/restore-report.json
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Verify PostgreSQL client
+        run: psql --version
+      - uses: actions/download-artifact@v5
+        with:
+          name: im-crm-preview-encrypted-backup
+          path: ${{ env.BACKUP_DIRECTORY }}
+          run-id: ${{ vars.RESTORE_DRILL_BACKUP_RUN_ID }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Restore into disposable hosted project
+        run: npm run restore:hosted
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hosted-restore-drill-report
+          path: ${{ env.RESTORE_DRILL_REPORT_PATH }}
+          if-no-files-found: ignore
+          retention-days: 14

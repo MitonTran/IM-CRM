@@ -97,6 +97,8 @@ BACKUP_FILE=/path/to/file.imcrm-backup npm run backup:free:verify
 
 Chỉ chạy restore vào Supabase project disposable/cô lập. Không restore đè Preview hoặc Production và không commit file backup/bản rõ; `.gitignore` chặn định dạng `*.imcrm-backup` cùng thư mục `backup-output`.
 
+Workflow `Hosted restore drill` cần thêm secrets `RESTORE_DRILL_DB_URL`, `RESTORE_DRILL_SUPABASE_URL`, `RESTORE_DRILL_SERVICE_ROLE_KEY` và variables `RESTORE_DRILL_PROJECT_REF`, `RESTORE_DRILL_BACKUP_RUN_ID`. Người chạy phải nhập lại chính xác target ref. Script dừng trước khi ghi nếu target trùng nguồn, URL/ref không khớp hoặc project đích đã có bảng `public`, Auth user, bucket hay Storage object. Database được restore theo quy trình `psql` một transaction của Supabase; Storage chỉ được upload qua API với `upsert` rồi tải lại để đối chiếu kích thước/SHA-256.
+
 Email mời đi qua `/auth/callback`; email khôi phục đi qua `/auth/confirm`, sau đó tới `/auth/update-password`. Màn hình đăng nhập có liên kết “Quên mật khẩu”; phản hồi gửi email luôn dùng thông báo chung để không tiết lộ tài khoản có tồn tại. Server Action recovery đặt `RedirectTo` là `/auth/confirm` trên HTTPS origin của chính request khi `Origin` khớp `Host`/`X-Forwarded-Host`; `NEXT_PUBLIC_APP_URL` chỉ là fallback an toàn. Thêm `/auth/confirm` của từng hostname UAT vào Supabase Redirect URLs.
 
 Khi đã cấu hình custom SMTP và Dashboard cho phép sửa Auth Email Templates, ưu tiên liên kết token-hash phía server cho Invite user và Reset password để người dùng có thể mở email ở trình duyệt khác:

@@ -6,6 +6,13 @@ import { pipeline } from "node:stream/promises";
 
 export const BACKUP_BUCKETS = ["document-extracted", "documents"];
 export const BACKUP_FORMAT_VERSION = 1;
+export const REQUIRED_DATABASE_BACKUP_FILES = [
+  "database/data.sql",
+  "database/migration-data.sql",
+  "database/migration-schema.sql",
+  "database/roles.sql",
+  "database/schema.sql",
+];
 
 const MAGIC = Buffer.from("IMCRMBK1", "ascii");
 const IV_BYTES = 12;
@@ -63,6 +70,73 @@ export function validateBackupConfiguration({ supabaseUrl, dbUrl, expectedProjec
   invariant(directMatch || poolerMatch, "Database URL không khớp project ref đã duyệt.");
 
   return { projectRef: expectedProjectRef, sourceEnvironment, supabaseUrl: api.origin, dbUrl: database.href };
+}
+
+export function validateRestoreConfiguration({
+  targetSupabaseUrl,
+  targetDbUrl,
+  targetProjectRef,
+  confirmationProjectRef,
+  sourceProjectRef,
+}) {
+  invariant(PROJECT_REF_PATTERN.test(targetProjectRef ?? ""), "RESTORE_DRILL_PROJECT_REF phải là project ref Supabase 20 ký tự.");
+  invariant(PROJECT_REF_PATTERN.test(sourceProjectRef ?? ""), "Project ref nguồn backup không hợp lệ.");
+  invariant(targetProjectRef !== sourceProjectRef, "Project restore không được trùng project nguồn Preview.");
+  invariant(confirmationProjectRef === targetProjectRef, "Xác nhận project restore không khớp project ref đã duyệt.");
+
+  let api;
+  let database;
+  try {
+    api = new URL(targetSupabaseUrl);
+    database = new URL(targetDbUrl);
+  } catch {
+    throw new Error("URL project restore không hợp lệ.");
+  }
+
+  invariant(api.protocol === "https:" && api.hostname === `${targetProjectRef}.supabase.co`, "Supabase URL restore không khớp project ref đã duyệt.");
+  invariant(database.protocol === "postgresql:" || database.protocol === "postgres:", "Database restore URL phải dùng PostgreSQL.");
+  invariant(database.password.length > 0, "Database restore URL phải chứa mật khẩu đã percent-encode.");
+  const decodedUsername = decodeURIComponent(database.username);
+  const directMatch = database.hostname === `db.${targetProjectRef}.supabase.co`;
+  const poolerMatch = decodedUsername === `postgres.${targetProjectRef}` && database.hostname.endsWith(".pooler.supabase.com");
+  invariant(directMatch || poolerMatch, "Database restore URL không khớp project ref đã duyệt.");
+
+  return {
+    sourceProjectRef,
+    targetProjectRef,
+    targetSupabaseUrl: api.origin,
+    targetDbUrl: database.href,
+  };
+}
+
+export function assertSafeArchiveEntries(entries) {
+  invariant(Array.isArray(entries) && entries.length > 0, "Archive backup không có file.");
+  for (const entry of entries) {
+    invariant(typeof entry === "string" && entry.length > 0 && !entry.includes("\0") && !entry.includes("\\"), "Archive backup chứa path không an toàn.");
+    const relative = entry.replace(/^\.\//, "").replace(/\/$/, "");
+    if (!relative) continue;
+    invariant(!path.posix.isAbsolute(relative), "Archive backup chứa path tuyệt đối.");
+    const segments = relative.split("/");
+    invariant(segments.every((segment) => segment && segment !== "." && segment !== ".."), "Archive backup chứa path traversal.");
+    invariant(path.posix.normalize(relative) === relative, "Archive backup chứa path không ở dạng chuẩn.");
+  }
+  return entries;
+}
+
+export function assertRestorableBackupManifest(manifest, expectedSourceProjectRef) {
+  invariant(manifest?.projectRef === expectedSourceProjectRef, "Manifest không thuộc project nguồn đã duyệt.");
+  invariant(manifest?.sourceEnvironment === "preview", "Restore drill hosted chỉ nhận backup Preview.");
+  const databasePaths = (manifest.databaseFiles ?? []).map((entry) => entry.path).sort();
+  invariant(JSON.stringify(databasePaths) === JSON.stringify(REQUIRED_DATABASE_BACKUP_FILES), "Manifest thiếu hoặc thừa file database bắt buộc.");
+  invariant(JSON.stringify(manifest.buckets) === JSON.stringify(BACKUP_BUCKETS), "Manifest bucket không khớp allowlist restore.");
+  return manifest;
+}
+
+export function assertEmptyRestoreTarget(snapshot) {
+  for (const key of ["publicTables", "authUsers", "storageBuckets", "storageObjects"]) {
+    invariant(Number.isSafeInteger(snapshot?.[key]) && snapshot[key] === 0, `Project restore không rỗng (${key}).`);
+  }
+  return snapshot;
 }
 
 export async function sha256File(filePath) {
