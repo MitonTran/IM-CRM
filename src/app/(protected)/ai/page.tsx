@@ -11,12 +11,11 @@ export const maxDuration = 60;
 export default async function AiAssistantPage({ searchParams }: { searchParams: Promise<{ conversation?: string; new?: string }> }) {
   const { conversation, new: newConversation } = await searchParams;
   const data = await getAiAssistantWorkspace(conversation, newConversation === "1");
-  const remaining = Math.max(0, data.settings.dailyQuota - data.settings.usedToday);
 
   return <div className="mx-auto max-w-[1380px]">
     <header className="flex flex-col justify-between gap-4 lg:flex-row lg:items-end">
       <div><p className="text-xs font-bold uppercase tracking-[.14em] text-[#728179]">AI · chỉ đọc · có nguồn</p><h1 className="mt-2 text-3xl font-bold tracking-[-.035em] sm:text-4xl">Trợ lý IM CRM</h1><p className="mt-2 max-w-2xl text-sm leading-6 text-[#718078]">Hỏi về công việc, KPI, doanh thu, phễu hoặc tài liệu trong đúng phạm vi bạn được phép xem.</p></div>
-      <div className="flex flex-wrap gap-2 text-xs font-semibold"><span className="rounded-full bg-[#e8f1df] px-3 py-2 text-[#426043]">{data.settings.providerName}</span><span className={`rounded-full px-3 py-2 shadow-sm ${remaining <= 3 ? "bg-amber-50 text-amber-800" : "bg-white text-[#65766d]"}`}>Còn {remaining}/{data.settings.dailyQuota} lượt hôm nay</span></div>
+      <div className="flex flex-wrap gap-2 text-xs font-semibold"><span className="rounded-full bg-[#e8f1df] px-3 py-2 text-[#426043]">{data.settings.providerName}</span><span className="rounded-full bg-white px-3 py-2 text-[#65766d] shadow-sm">Không giới hạn lượt trong CRM</span></div>
     </header>
 
     <div className="mt-6 grid min-h-[680px] overflow-hidden rounded-[26px] border border-[#dce5df] bg-white shadow-[0_18px_60px_rgba(28,54,43,.08)] lg:grid-cols-[290px_1fr]">
@@ -35,8 +34,8 @@ export default async function AiAssistantPage({ searchParams }: { searchParams: 
         <div className="flex-1 overflow-y-auto p-4 sm:p-7">
           {data.messages.length ? <div className="mx-auto max-w-3xl space-y-6">{data.messages.map((message) => <Message key={message.id} message={message} />)}</div> : <EmptyState />}
         </div>
-        {!data.settings.enabled || remaining <= 0 ? <p className="border-t border-amber-200 bg-amber-50 px-5 py-3 text-center text-xs font-semibold text-amber-800">{!data.settings.enabled ? "Trợ lý AI đang được quản trị viên tạm tắt." : "Bạn đã dùng hết quota AI hôm nay."}</p> : null}
-        <AiAssistantComposer conversationId={newConversation === "1" ? undefined : data.selected?.id} disabled={!data.settings.enabled || remaining <= 0} />
+        {!data.settings.enabled ? <p className="border-t border-amber-200 bg-amber-50 px-5 py-3 text-center text-xs font-semibold text-amber-800">Trợ lý AI đang được quản trị viên tạm tắt.</p> : null}
+        <AiAssistantComposer conversationId={newConversation === "1" ? undefined : data.selected?.id} disabled={!data.settings.enabled} />
       </section>
     </div>
   </div>;

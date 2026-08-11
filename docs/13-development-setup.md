@@ -36,6 +36,8 @@
 
 Với `AI_PROVIDER=groq`, model ID `openai/gpt-oss-20b` chạy trên GroqCloud bằng `GROQ_API_KEY`; không dùng OpenAI API key hay OpenAI credit. Endpoint và model bám theo [Groq OpenAI compatibility](https://console.groq.com/docs/openai), [Structured Outputs](https://console.groq.com/docs/structured-outputs) và [Free Plan limits](https://console.groq.com/docs/rate-limits).
 
+Trợ lý hỏi đáp hỗ trợ fallback `Groq → Google Gemini` khi có cả `GROQ_API_KEY` và `GEMINI_API_KEY`. Fallback chỉ chạy một lần khi Groq trả `429`, `5xx`, lỗi kết nối hoặc timeout; mặc định dùng `gemini-3.1-flash-lite` và có thể đổi bằng `GEMINI_FALLBACK_MODEL`. `AI_MODEL` vẫn chỉ cấu hình model chính của Groq, không được tái sử dụng cho Gemini. Lỗi API key `401/403` không fallback để tránh che giấu cấu hình sai. Tất cả key chỉ nằm phía server.
+
 Ví dụ khởi đầu với OpenRouter:
 
 ```dotenv

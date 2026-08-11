@@ -18,7 +18,7 @@ Các mục này không chặn thiết kế MVP; mặc định bên dưới đư�
 | OCR và parser | bật theo định dạng/chi phí đã thử nghiệm | trước M5 UAT | worker/cost/chất lượng |
 | Retention file đã xóa | không purge tự động trong MVP | trước Production | chi phí/pháp lý |
 | Retention AI | 90 ngày hội thoại, analysis giữ cùng khách | trước M6/Production | privacy/cost |
-| Model/quota AI | cấu hình server, quota theo user/ngày | trước M6 | chi phí/chất lượng |
+| Model/quota AI | Groq chính, Gemini dự phòng; trợ lý hỏi đáp không giới hạn lượt CRM, phân tích khách hàng vẫn có quota/ngày | đã chốt trong UAT M7 ngày 2026-08-11 | chi phí/chất lượng |
 | MFA Admin | bật nếu plan/quy trình hỗ trợ | trước Production | bảo mật/vận hành |
 | Backup/PITR | đã chốt gói Free ngày 2026-08-10: logical export mã hóa mỗi 24 giờ, backup Storage riêng, RPO 24 giờ và RTO 8 giờ; không dùng PITR | đã chốt trước Production | vận hành thủ công hơn, phải giữ key và diễn tập restore cô lập |
 

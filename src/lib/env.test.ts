@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { getAiProviderConfig, getGeminiEmbeddingConfig, getSupabasePublicEnv, hasAiProviderEnv, hasGeminiEmbeddingEnv, hasSupabaseEnv } from "./env";
+import { getAiProviderConfig, getGeminiEmbeddingConfig, getGeminiFallbackConfig, getSupabasePublicEnv, hasAiProviderEnv, hasGeminiEmbeddingEnv, hasSupabaseEnv } from "./env";
 
 const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const previousKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -13,6 +13,7 @@ const previousDeepSeekKey = process.env.DEEPSEEK_API_KEY;
 const previousGroqKey = process.env.GROQ_API_KEY;
 const previousNvidiaKey = process.env.NVIDIA_NIM_API_KEY;
 const previousEmbeddingModel = process.env.GEMINI_EMBEDDING_MODEL;
+const previousGeminiFallbackModel = process.env.GEMINI_FALLBACK_MODEL;
 
 afterEach(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
@@ -27,6 +28,7 @@ afterEach(() => {
   process.env.GROQ_API_KEY = previousGroqKey;
   process.env.NVIDIA_NIM_API_KEY = previousNvidiaKey;
   process.env.GEMINI_EMBEDDING_MODEL = previousEmbeddingModel;
+  process.env.GEMINI_FALLBACK_MODEL = previousGeminiFallbackModel;
 });
 
 describe("AI provider environment", () => {
@@ -71,6 +73,19 @@ describe("AI provider environment", () => {
     process.env.AI_PROVIDER = "custom";
     expect(hasAiProviderEnv()).toBe(false);
     expect(() => getAiProviderConfig()).toThrow(/không được hỗ trợ/);
+  });
+
+  it("configures a Gemini fallback only for a Groq primary without reusing the Groq model", () => {
+    process.env.AI_PROVIDER = "groq";
+    process.env.AI_MODEL = "openai/gpt-oss-20b";
+    process.env.GROQ_API_KEY = "groq-test";
+    process.env.GEMINI_API_KEY = "gemini-test";
+    delete process.env.GEMINI_FALLBACK_MODEL;
+    expect(getGeminiFallbackConfig()).toMatchObject({ provider: "gemini", model: "gemini-3.1-flash-lite" });
+    process.env.GEMINI_FALLBACK_MODEL = "gemini-fallback-test";
+    expect(getGeminiFallbackConfig()).toMatchObject({ provider: "gemini", model: "gemini-fallback-test" });
+    process.env.AI_PROVIDER = "openrouter";
+    expect(getGeminiFallbackConfig()).toBeNull();
   });
 });
 
