@@ -165,7 +165,9 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Script verify giải mã vào thư mục tạm, xác minh format, project/môi trường, kích thước và SHA-256 của toàn bộ database dump/Storage object rồi dọn bản rõ. Unit test bao phủ project mismatch, path traversal, bucket ngoài allowlist, round-trip mã hóa, key sai và manifest integrity.
 - Workflow `Free tier encrypted backup` có manual dispatch và lịch `18:15 UTC`; lịch bị skip cho đến khi repository variable `FREE_BACKUP_ENABLED=true`. Artifact chỉ nhận file `*.imcrm-backup`, không nhận SQL, object hoặc manifest bản rõ.
 - Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `100/100`, production build Webpack `Pass`; YAML workflow parse `Pass`. Không có migration/database/RLS thay đổi trong nhiệm vụ này.
-- Trạng thái: thiết kế/tooling local `Pass`; backup Preview live và restore vào hosted project disposable vẫn `Blocked` cho đến khi bốn GitHub secrets, ba repository variables và project đích cô lập được cấu hình. Production chưa thay đổi.
+- Backup Preview live run `31493176988` ngày 2026-08-11 `Pass`: xuất `5` file database và `4` Storage object (`2.339 byte`), giải mã/checksum toàn bundle `Pass`, rồi upload duy nhất artifact mã hóa `im-crm-preview-encrypted-backup` (`90.518 byte`). Artifact zip có digest `sha256:ea5e6b87bee9d33680b3520079a42cf92c6ed33b6e06e330df4be7d78feefee2` và hết hạn `2026-08-25T12:59:14Z` theo retention 14 ngày. Log không lộ secret; file bản rõ chỉ nằm trong thư mục tạm trên runner.
+- `pg_dump` cảnh báo quan hệ khóa ngoại vòng giữa một số bảng; backup vẫn hoàn tất nhưng đây là lý do bắt buộc phải chạy restore drill hosted thay vì coi checksum là bằng chứng khôi phục được.
+- Trạng thái: thiết kế/tooling và backup Preview live `Pass`; restore artifact vào hosted project disposable vẫn `Blocked` cho đến khi cấu hình project đích cô lập. `FREE_BACKUP_ENABLED` tiếp tục để `false` cho đến khi workflow được merge theo chuỗi PR và restore drill hoàn tất. Production chưa thay đổi.
 
 ## Smoke test chung
 

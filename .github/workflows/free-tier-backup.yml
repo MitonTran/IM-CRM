@@ -2,12 +2,6 @@ name: Free tier encrypted backup
 
 on:
   workflow_dispatch:
-  # Temporary Preview-only bootstrap trigger. Remove after the first live backup.
-  push:
-    branches:
-      - codex/preview-performance-audit
-    paths:
-      - .github/workflows/free-tier-backup.yml
   schedule:
     - cron: "15 18 * * *"
 
@@ -20,10 +14,7 @@ concurrency:
 
 jobs:
   backup:
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      vars.FREE_BACKUP_ENABLED == 'true' ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/codex/preview-performance-audit')
+    if: github.event_name == 'workflow_dispatch' || vars.FREE_BACKUP_ENABLED == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
