@@ -2,6 +2,12 @@ name: Free tier encrypted backup
 
 on:
   workflow_dispatch:
+  # Temporary Preview-only bootstrap trigger. Remove after the first live backup.
+  push:
+    branches:
+      - codex/preview-performance-audit
+    paths:
+      - .github/workflows/free-tier-backup.yml
   schedule:
     - cron: "15 18 * * *"
 
