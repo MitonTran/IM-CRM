@@ -139,6 +139,15 @@ export function assertEmptyRestoreTarget(snapshot) {
   return snapshot;
 }
 
+export function extractRoleNamesFromDump(sql) {
+  invariant(typeof sql === "string" && sql.length > 0, "roles.sql không hợp lệ.");
+  const names = new Set();
+  const pattern = /^\s*(?:CREATE|ALTER)\s+ROLE\s+(?:"([^"]+)"|([a-z_][a-z0-9_]*))/gimu;
+  for (const match of sql.matchAll(pattern)) names.add(match[1] ?? match[2]);
+  invariant(names.size > 0, "roles.sql không chứa role để kiểm tra.");
+  return [...names].sort();
+}
+
 export async function sha256File(filePath) {
   const hash = createHash("sha256");
   for await (const chunk of createReadStream(filePath)) hash.update(chunk);

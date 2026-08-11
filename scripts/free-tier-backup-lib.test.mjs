@@ -11,6 +11,7 @@ import {
   assertSafeObjectPath,
   decryptFile,
   encryptFile,
+  extractRoleNamesFromDump,
   resolveObjectDestination,
   sha256File,
   validateBackupConfiguration,
@@ -87,6 +88,15 @@ describe("free tier backup guardrails", () => {
     }, "abcdefghijklmnopqrst")).toThrow(/file database/);
     expect(assertEmptyRestoreTarget({ publicTables: 0, authUsers: 0, storageBuckets: 0, storageObjects: 0 })).toMatchObject({ publicTables: 0 });
     expect(() => assertEmptyRestoreTarget({ publicTables: 1, authUsers: 0, storageBuckets: 0, storageObjects: 0 })).toThrow(/không rỗng/);
+  });
+
+  it("trích role identifier an toàn để đối chiếu managed target", () => {
+    expect(extractRoleNamesFromDump(`
+      ALTER ROLE "authenticator" SET statement_timeout TO '8s';
+      CREATE ROLE custom_reader;
+      ALTER ROLE custom_reader WITH NOLOGIN;
+    `)).toEqual(["authenticator", "custom_reader"]);
+    expect(() => extractRoleNamesFromDump("select 1;")).toThrow(/không chứa role/);
   });
 });
 

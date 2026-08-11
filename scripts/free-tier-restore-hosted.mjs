@@ -11,6 +11,7 @@ import {
   assertSafeArchiveEntries,
   decryptFile,
   ensureDirectory,
+  extractRoleNamesFromDump,
   validateRestoreConfiguration,
   verifyBackupDirectory,
 } from "./free-tier-backup-lib.mjs";
@@ -115,12 +116,24 @@ function databaseSnapshot(dbUrl) {
   return snapshot;
 }
 
-function restoreDatabase(dbUrl, bundleDirectory) {
+async function assertManagedRolesCompatible(dbUrl, rolesPath) {
+  const sourceRoles = extractRoleNamesFromDump(await readFile(rolesPath, "utf8"));
+  const targetRoles = new Set(runPsql(dbUrl, [
+    "--set=ON_ERROR_STOP=1",
+    "--tuples-only",
+    "--no-align",
+    "--command=select rolname from pg_roles order by rolname;",
+  ], { capture: true }).split("\n").filter(Boolean));
+  invariant(sourceRoles.every((role) => targetRoles.has(role)), "Project restore thiếu role có trong backup; dừng trước khi restore schema.");
+  return sourceRoles.length;
+}
+
+async function restoreDatabase(dbUrl, bundleDirectory) {
   const databaseDirectory = path.join(bundleDirectory, "database");
+  const compatibleRoles = await assertManagedRolesCompatible(dbUrl, path.join(databaseDirectory, "roles.sql"));
   runPsql(dbUrl, [
     "--single-transaction",
     "--variable=ON_ERROR_STOP=1",
-    `--file=${path.join(databaseDirectory, "roles.sql")}`,
     `--file=${path.join(databaseDirectory, "schema.sql")}`,
     "--command=SET session_replication_role = replica",
     `--file=${path.join(databaseDirectory, "data.sql")}`,
@@ -131,6 +144,7 @@ function restoreDatabase(dbUrl, bundleDirectory) {
     `--file=${path.join(databaseDirectory, "migration-schema.sql")}`,
     `--file=${path.join(databaseDirectory, "migration-data.sql")}`,
   ]);
+  return compatibleRoles;
 }
 
 async function sha256Blob(blob) {
@@ -192,7 +206,7 @@ export async function runHostedRestoreDrill(environment = process.env) {
       JSON.parse(await readFile(path.join(bundleDirectory, "manifest.json"), "utf8")),
       configuration.sourceProjectRef,
     );
-    restoreDatabase(configuration.targetDbUrl, bundleDirectory);
+    const compatibleRoles = await restoreDatabase(configuration.targetDbUrl, bundleDirectory);
     const client = createClient(configuration.targetSupabaseUrl, environment.RESTORE_DRILL_SERVICE_ROLE_KEY, {
       auth: { autoRefreshToken: false, persistSession: false },
     });
@@ -214,6 +228,7 @@ export async function runHostedRestoreDrill(environment = process.env) {
       finishedAtUtc: finishedAt.toISOString(),
       durationMs: finishedAt.getTime() - startedAt.getTime(),
       databaseFiles: manifest.databaseFiles.length,
+      compatibleManagedRoles: compatibleRoles,
       storageObjects: storage.storageObjects,
       storageBytes: storage.storageBytes,
       targetBefore: before,
@@ -222,6 +237,7 @@ export async function runHostedRestoreDrill(environment = process.env) {
         "source-target-project-isolation",
         "empty-target-preflight",
         "encrypted-bundle-integrity",
+        "managed-role-compatibility",
         "single-transaction-database-restore",
         "migration-history",
         "storage-api-upload",
