@@ -7,7 +7,7 @@ on:
         description: "Nhập chính xác project ref disposable để cho phép restore"
         required: true
         type: string
-  # Temporary Preview-only bootstrap trigger. Remove after the hosted drill passes (retry 2).
+  # Temporary Preview-only bootstrap trigger. Remove after the hosted drill passes (retry 3).
   push:
     branches:
       - codex/preview-performance-audit

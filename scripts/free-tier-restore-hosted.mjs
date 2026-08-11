@@ -86,10 +86,6 @@ function databaseSnapshot(dbUrl) {
       'authUsers', (select count(*)::int from auth.users),
       'storageBuckets', (select count(*)::int from storage.buckets),
       'storageObjects', (select count(*)::int from storage.objects),
-      'migrationVersions', (
-        select case when to_regclass('supabase_migrations.schema_migrations') is null then 0
-          else (select count(*)::int from supabase_migrations.schema_migrations) end
-      ),
       'publicRlsTables', (
         select count(*)::int
         from pg_class c
@@ -100,7 +96,23 @@ function databaseSnapshot(dbUrl) {
     )::text;
   `;
   const serialized = runPsql(dbUrl, ["--set=ON_ERROR_STOP=1", "--tuples-only", "--no-align", `--command=${sql}`], { capture: true });
-  return JSON.parse(serialized);
+  const snapshot = JSON.parse(serialized);
+  const migrationTableExists = runPsql(dbUrl, [
+    "--set=ON_ERROR_STOP=1",
+    "--tuples-only",
+    "--no-align",
+    "--command=select to_regclass('supabase_migrations.schema_migrations') is not null;",
+  ], { capture: true }) === "t";
+  snapshot.migrationVersions = migrationTableExists
+    ? Number(runPsql(dbUrl, [
+      "--set=ON_ERROR_STOP=1",
+      "--tuples-only",
+      "--no-align",
+      "--command=select count(*) from supabase_migrations.schema_migrations;",
+    ], { capture: true }))
+    : 0;
+  invariant(Number.isSafeInteger(snapshot.migrationVersions), "Không đọc được lịch sử migration của project restore.");
+  return snapshot;
 }
 
 function restoreDatabase(dbUrl, bundleDirectory) {
