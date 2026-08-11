@@ -5,6 +5,7 @@ import { FileText, FileUp, FolderPlus, LoaderCircle, RefreshCw, Trash2, UploadCl
 import { createClient } from "@/lib/supabase/client";
 import { createFolderAction, deleteDocumentAction, finalizeDocumentUpload, prepareDocumentUpload, prepareDocumentVersionUpload, processDocumentNowAction, retryDocumentEmbeddingAction } from "./actions";
 import type { DocumentOption } from "./types";
+import { documentFileSizeError } from "./upload-validation";
 
 const accepted = ".pdf,.docx,.xlsx,.pptx,.png,.jpg,.jpeg,.webp";
 async function sha256(file: File) {
@@ -22,6 +23,7 @@ export function DocumentUploadForm({ role, teamId, teams, users, folders }: { ro
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); const form = new FormData(event.currentTarget); const file = form.get("file");
     if (!(file instanceof File) || !file.size) { setOk(false); setMessage("Hãy chọn một file."); return; }
+    const sizeError = documentFileSizeError(file.size); if (sizeError) { setOk(false); setMessage(sizeError); return; }
     const [scope, subject = ""] = String(form.get("scopeSubject")).split(":") as ["organization" | "team" | "user", string];
     setPending(true); setMessage("Đang kiểm tra file...");
     const prepared = await prepareDocumentUpload({ title: form.get("title"), fileName: file.name, mimeType: file.type, sizeBytes: file.size, scope, teamId: scope === "team" ? subject : null, userId: scope === "user" ? subject : null, folderId: form.get("folderId") || null });
@@ -45,6 +47,7 @@ export function VersionUploadForm({ documentId }: { documentId: string }) {
   const [pending, setPending] = useState(false); const [message, setMessage] = useState("");
   async function submit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault(); const formElement = event.currentTarget; const form = new FormData(formElement); const file = form.get("file"); if (!(file instanceof File) || !file.size) return;
+    const sizeError = documentFileSizeError(file.size); if (sizeError) { setMessage(sizeError); return; }
     setPending(true); setMessage("Đang chuẩn bị phiên bản..."); const prepared = await prepareDocumentVersionUpload({ documentId, fileName: file.name, mimeType: file.type, sizeBytes: file.size });
     if (!prepared.ok || !prepared.storagePath || !prepared.versionId) { setPending(false); setMessage(prepared.message); return; }
     const checksum = await sha256(file); const { error } = await createClient().storage.from("documents").upload(prepared.storagePath, file, { contentType: file.type, upsert: false });

@@ -71,6 +71,18 @@ test("health endpoint và security headers hoạt động trên bản production
   expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
 });
 
+test("cron nội bộ từ chối request công khai thiếu hoặc sai secret", async ({ request }) => {
+  for (const route of ["/api/cron/ai-retention", "/api/cron/document-extraction"]) {
+    const missingSecret = await request.get(route);
+    expect(missingSecret.status()).toBe(401);
+    expect(await missingSecret.text()).toBe("Unauthorized");
+
+    const wrongSecret = await request.get(route, { headers: { authorization: "Bearer wrong-public-secret" } });
+    expect(wrongSecret.status()).toBe(401);
+    expect(await wrongSecret.text()).toBe("Unauthorized");
+  }
+});
+
 test("login, dashboard và danh sách khách nằm trong performance budget local", async ({ browser, page }, testInfo) => {
   const metrics: PerformanceBaseline[] = [];
   metrics.push(await measureFullNavigation(page, "/login", "Đăng nhập IM CRM"));

@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { processDocumentVersion } from "./worker";
+import { MAX_DOCUMENT_FILE_BYTES } from "./upload-validation";
 
 const fileSchema = z.object({
   title: z.string().trim().min(1).max(200), fileName: z.string().trim().min(1).max(255),
-  mimeType: z.string().min(1).max(150), sizeBytes: z.number().int().min(1).max(26_214_400),
+  mimeType: z.string().min(1).max(150), sizeBytes: z.number().int().min(1).max(MAX_DOCUMENT_FILE_BYTES),
   scope: z.enum(["organization", "team", "user"]), teamId: z.uuid().nullable(), userId: z.uuid().nullable(), folderId: z.uuid().nullable(),
 });
 const versionSchema = fileSchema.pick({ fileName: true, mimeType: true, sizeBytes: true }).extend({ documentId: z.uuid() });
