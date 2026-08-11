@@ -83,7 +83,7 @@ test("recovery token cho phép đặt mật khẩu mới rồi đăng nhập l�
 test("Sale chỉ thấy khách được giao cho mình và không vào trang quản trị", async ({ page }) => {
   await login(page, E2E_USERS.saleA.email);
   await expect(page.getByText(E2E_USERS.saleA.fullName, { exact: true })).toBeVisible();
-  await expect(page.getByText("Nhân sự & team", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Nhân sự & nhóm", { exact: true })).toHaveCount(0);
   await page.goto("/customers");
   await expect(page.getByRole("heading", { name: "Khách hàng" })).toBeVisible();
   await expect(page.getByText(E2E_CUSTOMERS.saleA.name, { exact: true })).toBeVisible();
@@ -107,32 +107,32 @@ test("Sale điều chỉnh giao dịch trong 24 giờ mà không làm trùng doa
   await expect(registration.getByRole("status")).toHaveText("Đã ghi nhận giao dịch.");
   await expect(page.getByText("1.000.000 ₫", { exact: true }).first()).toBeVisible();
 
-  const amendment = page.locator("details").filter({ has: page.getByText("Chỉnh sửa giao dịch", { exact: true }) });
+  const amendment = page.locator("details").filter({ has: page.getByText("Chỉnh sửa giao dịch", { exact: true }) }).first();
   await amendment.getByText("Chỉnh sửa giao dịch", { exact: true }).click();
   await amendment.getByLabel("Doanh thu VND").fill("1250000");
   await expect(amendment.getByLabel("Doanh thu VND")).toHaveValue("1.250.000");
   await amendment.locator('input[name="reason"]').fill("Nhập sai số tiền E2E");
-  await amendment.getByRole("button", { name: "Lưu bản điều chỉnh" }).click();
-  await expect(page.getByText("Đã điều chỉnh giao dịch và giữ lại bản cũ trong lịch sử.", { exact: true })).toBeVisible();
+  await amendment.getByRole("button", { name: "Lưu thay đổi" }).click();
+  await expect(page.getByText("Đã lưu thay đổi giao dịch.", { exact: true })).toBeVisible();
 
   await expect(page.getByText("1.250.000 ₫", { exact: true }).first()).toBeVisible();
   await expect(page.getByText("1.000.000 ₫", { exact: true })).toBeVisible();
-  await expect(page.getByText("Bản điều chỉnh", { exact: true })).toBeVisible();
-  await expect(page.getByText("Đã vô hiệu", { exact: true })).toBeVisible();
-  await expect(page.getByText("Lý do vô hiệu: Nhập sai số tiền E2E", { exact: true })).toBeVisible();
-  await expect(page.getByText("Vô hiệu hóa giao dịch", { exact: true })).toHaveCount(0);
+  await expect(page.getByText("Đã chỉnh sửa", { exact: true })).toBeVisible();
+  await expect(page.locator("span").filter({ hasText: /^Đã hủy$/ })).toBeVisible();
+  await expect(page.getByText("Lý do hủy: Nhập sai số tiền E2E", { exact: true })).toBeVisible();
+  await expect(page.getByText("Hủy hiệu lực giao dịch", { exact: true })).toHaveCount(0);
 
   await page.reload();
   await expect(page.getByText("1.250.000 ₫", { exact: true }).first()).toBeVisible();
-  await expect(page.getByText("Bản điều chỉnh", { exact: true })).toBeVisible();
-  await expect(page.getByText("Active", { exact: true })).toHaveCount(1);
+  await expect(page.getByText("Đã chỉnh sửa", { exact: true })).toBeVisible();
+  await expect(page.getByText("Đang hiệu lực", { exact: true })).toHaveCount(1);
 });
 
 test("Leader thấy đúng dữ liệu team và các dashboard quản lý", async ({ page }) => {
   await login(page, E2E_USERS.leaderA.email);
   await expect(page.getByText(E2E_USERS.leaderA.fullName, { exact: true })).toBeVisible();
   await expect(page.getByRole("heading", { name: "Bảng hiệu suất" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Đặt mục tiêu KPI" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Giao mục tiêu" })).toBeVisible();
   await page.goto("/customers");
   await expect(page.getByText(E2E_CUSTOMERS.saleA.name, { exact: true })).toBeVisible();
   await expect(page.getByText(E2E_CUSTOMERS.unassignedA.name, { exact: true })).toBeVisible();
@@ -143,31 +143,31 @@ test("Admin thấy toàn hệ thống và trang nhân sự", async ({ page }) =>
   await resetAdminManagementFixtures();
   await login(page, E2E_USERS.admin.email);
   await expect(page.getByText(E2E_USERS.admin.fullName, { exact: true })).toBeVisible();
-  await expect(page.getByText("Nhân sự & team", { exact: true })).toBeVisible();
+  await expect(page.getByText("Nhân sự & nhóm", { exact: true })).toBeVisible();
   await page.goto("/customers");
   await expect(page.getByText(E2E_CUSTOMERS.saleA.name, { exact: true })).toBeVisible();
   await expect(page.getByText(E2E_CUSTOMERS.saleB.name, { exact: true })).toBeVisible();
   await expect(page.getByText(E2E_CUSTOMERS.unassignedA.name, { exact: true })).toBeVisible();
   await page.goto("/admin/people");
-  await expect(page.getByRole("heading", { name: "Nhân sự & team" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Nhân sự & nhóm" })).toBeVisible();
   const saleBCard = page.getByRole("article", { name: `Quản lý thành viên ${E2E_USERS.saleB.fullName}` });
   await expect(saleBCard).toBeVisible();
   await expect(saleBCard.getByText(E2E_USERS.saleB.email)).toBeVisible();
 
   const renamedTeam = "Team Trống Đã Đổi E2E";
-  const teamCard = page.getByRole("article", { name: `Quản lý team ${E2E_TEAMS.empty.name}` });
+  const teamCard = page.getByRole("article", { name: `Quản lý nhóm ${E2E_TEAMS.empty.name}` });
   await teamCard.getByLabel(`Tên ${E2E_TEAMS.empty.name}`).fill(renamedTeam);
   await teamCard.getByRole("button", { name: "Lưu tên" }).click();
-  const renamedTeamCard = page.getByRole("article", { name: `Quản lý team ${renamedTeam}` });
+  const renamedTeamCard = page.getByRole("article", { name: `Quản lý nhóm ${renamedTeam}` });
   await expect(renamedTeamCard).toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("Đã lưu tên và trạng thái team.");
+  await expect(page.getByRole("status")).toHaveText("Đã lưu tên và trạng thái nhóm.");
   await renamedTeamCard.getByRole("button", { name: "Ngừng" }).click();
-  const stoppedTeamCard = page.getByRole("article", { name: `Quản lý team ${renamedTeam}` });
+  const stoppedTeamCard = page.getByRole("article", { name: `Quản lý nhóm ${renamedTeam}` });
   await expect(stoppedTeamCard.getByText("Ngừng hoạt động", { exact: true })).toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("Đã lưu tên và trạng thái team.");
+  await expect(page.getByRole("status")).toHaveText("Đã lưu tên và trạng thái nhóm.");
   await stoppedTeamCard.getByRole("button", { name: "Kích hoạt" }).click();
   await expect(stoppedTeamCard.getByText("Hoạt động", { exact: true })).toBeVisible();
-  await expect(page.getByRole("status")).toHaveText("Đã lưu tên và trạng thái team.");
+  await expect(page.getByRole("status")).toHaveText("Đã lưu tên và trạng thái nhóm.");
 
   const leaderCard = page.getByRole("article", { name: `Quản lý thành viên ${E2E_USERS.leaderB.fullName}` });
   await leaderCard.getByLabel("Họ tên thành viên").fill("Leader B Đã Đổi E2E");
