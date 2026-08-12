@@ -168,7 +168,7 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Backup Preview live run `31493176988` ngày 2026-08-11 `Pass`: xuất `5` file database và `4` Storage object (`2.339 byte`), giải mã/checksum toàn bundle `Pass`, rồi upload duy nhất artifact mã hóa `im-crm-preview-encrypted-backup` (`90.518 byte`). Artifact zip có digest `sha256:ea5e6b87bee9d33680b3520079a42cf92c6ed33b6e06e330df4be7d78feefee2` và hết hạn `2026-08-25T12:59:14Z` theo retention 14 ngày. Log không lộ secret; file bản rõ chỉ nằm trong thư mục tạm trên runner.
 - `pg_dump` cảnh báo quan hệ khóa ngoại vòng giữa một số bảng; backup vẫn hoàn tất nhưng đây là lý do bắt buộc phải chạy restore drill hosted thay vì coi checksum là bằng chứng khôi phục được.
 - Hosted restore run `31498309257` ngày 2026-08-11 `Pass` vào project disposable `jflpvpjidblltueeiwmk`: preflight xác nhận target có `0` bảng/user/bucket/object; sau restore có `23` bảng public và cả `23` bật RLS, `36` policy, `15` migration version, `5` Auth user, `2` bucket và `4` Storage object (`2.339 byte`). Cả bốn object được upload qua Storage API rồi tải lại để so khớp kích thước/SHA-256. Report artifact `hosted-restore-drill-report` có digest `sha256:0ff288d3c8c569d4e6a380ab832f82c4663318a0f7fc21ff3dc8f386489dde5c`, hết hạn `2026-08-25T13:55:03Z` và không chứa row data, object path hay secret.
-- Trạng thái: thiết kế/tooling, backup Preview live và restore hosted database/Storage/RLS `Pass`. Còn kiểm tra đăng nhập/phạm vi năm vai trò trên project restore và ký UAT trước khi hoàn tất M7.2. `FREE_BACKUP_ENABLED` tiếp tục để `false` cho đến khi workflow được merge theo chuỗi PR. Production chưa thay đổi.
+- Trạng thái: thiết kế/tooling, backup Preview live và restore hosted database/Storage/RLS `Pass`. Kiểm tra đăng nhập/phạm vi năm vai trò trên project restore tiếp tục `Pass` tại UAT-15. `FREE_BACKUP_ENABLED` tiếp tục để `false` cho đến khi workflow được merge theo chuỗi PR; ký UAT và phê duyệt Production vẫn chưa hoàn tất.
 
 ### UAT-14 — hardening cron và giới hạn upload
 
@@ -176,6 +176,15 @@ Các checkbox bên dưới vẫn để trống cho đến khi có đủ tài kho
 - Unit test xác nhận file đúng `25 MB` được chấp nhận, `25 MB + 1 byte` và kích thước rỗng/âm/lẻ bị từ chối. Database test hiện có tiếp tục xác nhận bucket private giới hạn `26.214.400 byte` và RPC trả `document_file_size_invalid` khi vượt một byte.
 - E2E production-like gọi cả `/api/cron/ai-retention` và `/api/cron/document-extraction` khi thiếu header và khi dùng bearer sai; cả bốn request đều trả `401 Unauthorized` trước khi retention/extraction worker có thể chạy.
 - Kiểm tra local: lint `Pass`, typecheck `Pass`, unit `112/112`, production build Webpack `Pass`. Quality workflow `31502542284` pass application, database/restore drill và E2E. Không có migration hoặc thay đổi RLS; Production chưa thay đổi.
+
+### UAT-15 — đăng nhập và RLS năm vai trò trên project restore
+
+- Commit `c0b7b95` thêm script server-only kiểm tra đúng project source/target, cơ cấu năm tài khoản UAT và phạm vi RLS. Commit `2b35613` tích hợp chế độ `operation=uat` vào workflow restore đã có guardrail; job restore bị bỏ qua khi chạy UAT nên không ghi chồng database hoặc Storage. Commit `b373542` cho phép một nhóm không có khách nhưng vẫn bắt buộc có khách được giao hợp lệ ở nhóm còn lại để kiểm tra trường hợp phạm vi rỗng.
+- Lần chạy `31554659207` dừng trước khi tạo mật khẩu tạm vì điều kiện fixture ban đầu yêu cầu cả hai nhóm đều có khách. Dữ liệu restore thực tế có đủ hai nhóm nhưng khách giả chỉ thuộc một nhóm; đây là tình huống hợp lệ và đã được checklist Leader Team B xác nhận trước đó.
+- Hosted restore UAT run `31554910203` ngày 2026-08-12 `Pass` trên project disposable `jflpvpjidblltueeiwmk` trong `10.803 ms`: đủ `5` hồ sơ hoạt động, `2` nhóm, `2` khách và `2` tài liệu gồm một tài liệu toàn công ty, một tài liệu theo nhóm. Hai Sale chỉ thấy chính mình và một nhóm; hai Leader chỉ thấy hai hồ sơ cùng nhóm và một nhóm; nhóm rỗng thấy `0` khách/`1` tài liệu toàn công ty, nhóm có fixture thấy `2` khách/`2` tài liệu; Admin thấy đủ `5` hồ sơ, `2` nhóm, `2` khách và `2` tài liệu.
+- Mỗi tài khoản được đặt một mật khẩu ngẫu nhiên chỉ tồn tại trong bộ nhớ runner và project disposable, sau đó đăng nhập thật qua Supabase Auth. Các tập ID trả về qua phiên người dùng được so khớp nội bộ với tập own/team/all dự kiến; report không chứa email, UUID, password, token hoặc nội dung khách/tài liệu.
+- Artifact `hosted-restore-uat-report` có digest `sha256:4bebcf5a9b1e772e2937e39a2072265d2d0381ffff4a47a8dca5899d73433905`, hết hạn `2026-08-26T01:50:58Z` và chỉ chứa số đếm đã ẩn danh. Production và Supabase Preview nguồn không thay đổi.
+- Trạng thái: cổng restore hosted + đăng nhập/RLS năm vai trò `Pass`. M7.2 còn chờ Quality của commit chốt, merge chuỗi PR, chữ ký Sale/Leader/Admin/Release owner và quyết định phát hành Production.
 
 ## Smoke test chung
 
