@@ -34,9 +34,14 @@ describe("hosted restore UAT guardrails", () => {
     expect(() => assertHostedRoleTopology(profiles, authUsers.slice(1))).toThrow(/Auth tương ứng/);
   });
 
-  it("chỉ chấp nhận fixture có khách hai nhóm và tài liệu kiểm tra chéo", () => {
+  it("chấp nhận một nhóm rỗng nhưng vẫn yêu cầu khách được giao hợp lệ và tài liệu kiểm tra chéo", () => {
     expect(assertFixtureCoverage(snapshot)).toBe(snapshot);
-    expect(() => assertFixtureCoverage({ ...snapshot, customers: snapshot.customers.slice(0, 1) })).toThrow(/hai khách/);
+    expect(assertFixtureCoverage({ ...snapshot, customers: snapshot.customers.slice(0, 1) })).toBeTruthy();
+    expect(() => assertFixtureCoverage({ ...snapshot, customers: [] })).toThrow(/một khách/);
+    expect(() => assertFixtureCoverage({
+      ...snapshot,
+      customers: [{ id: "customer-invalid", team_id: "team-b", owner_user_id: "sale-a" }],
+    })).toThrow(/giao hợp lệ/);
     expect(() => assertFixtureCoverage({ ...snapshot, documents: snapshot.documents.filter((row) => row.scope_type !== "team") })).toThrow(/theo nhóm/);
   });
 

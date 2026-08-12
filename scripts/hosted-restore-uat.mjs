@@ -72,8 +72,13 @@ export function expectedVisibleRows(profile, snapshot) {
 export function assertFixtureCoverage(snapshot) {
   invariant(snapshot.profiles.length === 5, "Fixture restore thiếu hồ sơ UAT đang hoạt động.");
   invariant(snapshot.teams.length === 2, "Fixture restore thiếu hai nhóm đang hoạt động.");
-  invariant(snapshot.customers.length >= 2, "Fixture restore cần ít nhất hai khách giả để kiểm tra chéo.");
-  invariant(new Set(snapshot.customers.map((row) => row.team_id)).size === 2, "Fixture khách hàng chưa phủ cả hai nhóm.");
+  invariant(snapshot.customers.length >= 1, "Fixture restore cần ít nhất một khách giả để kiểm tra chéo.");
+  const activeTeamIds = new Set(snapshot.teams.map((row) => row.id));
+  const activeSales = new Map(snapshot.profiles.filter((row) => row.role === "sale").map((row) => [row.id, row]));
+  invariant(snapshot.customers.some((row) => {
+    const owner = activeSales.get(row.owner_user_id);
+    return owner?.team_id === row.team_id && activeTeamIds.has(row.team_id);
+  }), "Fixture restore thiếu khách được giao hợp lệ cho tư vấn viên UAT.");
   invariant(snapshot.documents.some((row) => row.scope_type === "organization"), "Fixture restore thiếu tài liệu toàn công ty.");
   invariant(snapshot.documents.some((row) => row.scope_type === "team"), "Fixture restore thiếu tài liệu giới hạn theo nhóm.");
   return snapshot;
@@ -199,6 +204,7 @@ export async function runHostedRestoreUat(environment = process.env) {
       "password-authentication",
       "sale-own-customer-scope",
       "leader-team-customer-scope",
+      "empty-team-customer-isolation",
       "admin-all-customer-scope",
       "profile-and-team-rls",
       "organization-and-team-document-rls",
