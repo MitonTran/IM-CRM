@@ -8,7 +8,7 @@ export type ExtractionResult = { versionId: string | null; status: "ready" | "fa
 
 async function markFinished(versionId: string, status: "failed" | "unsupported", safeError?: string) {
   const admin = createAdminClient();
-  await admin.rpc("fail_document_extraction", { target_version_id: versionId, final_status: status, safe_error: status === "failed" ? safeError ?? "Không thể trích xuất nội dung file." : null });
+  await admin.rpc("fail_document_extraction", { target_version_id: versionId, final_status: status, safe_error: status === "failed" ? safeError ?? "Không đọc được nội dung tài liệu." : null });
 }
 
 async function processClaimed(row: ClaimedVersion): Promise<ExtractionResult> {
@@ -27,7 +27,7 @@ async function processClaimed(row: ClaimedVersion): Promise<ExtractionResult> {
     if (completeError) throw new Error("document_extraction_commit_failed");
     return { versionId: row.version_id, status: "ready", chunks: chunks.length };
   } catch {
-    await markFinished(row.version_id, "failed", "Không thể trích xuất file. Hãy kiểm tra file không bị hỏng hoặc đặt mật khẩu.");
+    await markFinished(row.version_id, "failed", "Không đọc được nội dung tài liệu. Hãy kiểm tra tệp và thử lại.");
     return { versionId: row.version_id, status: "failed" };
   }
 }

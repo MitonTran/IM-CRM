@@ -1,0 +1,57 @@
+name: AI provider evaluation
+
+on:
+  workflow_dispatch:
+    inputs:
+      provider:
+        description: Nhà cung cấp AI cần đánh giá
+        required: true
+        default: openrouter
+        type: choice
+        options:
+          - openrouter
+          - gemini
+          - nvidia
+          - deepseek
+          - groq
+          - openai
+      model:
+        description: Model override; để trống để dùng mặc định server
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-provider-eval-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  live-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      AI_PROVIDER: ${{ inputs.provider }}
+      AI_MODEL: ${{ inputs.model }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+      NVIDIA_NIM_API_KEY: ${{ secrets.NVIDIA_NIM_API_KEY }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run eval:ai:live -- --reporter=json --outputFile=test-results/ai-provider-eval.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ai-provider-eval-${{ inputs.provider }}
+          path: test-results/ai-provider-eval.json
+          if-no-files-found: ignore
+          retention-days: 14

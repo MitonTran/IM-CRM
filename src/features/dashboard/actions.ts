@@ -10,7 +10,7 @@ export type TargetActionState = { ok: boolean; message: string };
 const schema = z.object({
   metric: z.enum(KPI_METRICS),
   scope: z.enum(["user", "team"]),
-  subjectId: z.uuid("Đối tượng mục tiêu chưa hợp lệ."),
+  subjectId: z.uuid("Người hoặc nhóm được giao mục tiêu chưa hợp lệ."),
   period: z.enum(["day", "month", "year"]),
   periodStart: z.iso.date(),
   periodEnd: z.iso.date(),
@@ -42,6 +42,5 @@ export async function upsertTargetAction(_: TargetActionState, formData: FormDat
     return { ok: false, message: denied ? "Bạn không có quyền đặt mục tiêu cho đối tượng này." : "Không thể lưu mục tiêu. Vui lòng thử lại." };
   }
   revalidatePath("/dashboard");
-  return { ok: true, message: "Đã lưu mục tiêu KPI." };
+  return { ok: true, message: "Đã lưu mục tiêu." };
 }
-

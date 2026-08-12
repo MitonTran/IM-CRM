@@ -28,6 +28,9 @@ export default async function globalTeardown() {
   const sql = postgres(databaseUrl, { max: 1, onnotice: () => undefined });
   try {
     await sql.begin(async (tx) => {
+      await tx`delete from public.deals where replaces_deal_id in (select id from public.deals where customer_id = any(${customerIds}::uuid[]))`;
+      await tx`delete from public.deals where customer_id = any(${customerIds}::uuid[])`;
+      await tx`delete from public.activities where customer_id = any(${customerIds}::uuid[])`;
       for (const customerId of customerIds) await tx`delete from public.customers where id=${customerId}::uuid`;
       for (const userId of userIds) await tx`delete from public.profiles where id=${userId}::uuid`;
       for (const teamId of teamIds) await tx`delete from public.teams where id=${teamId}::uuid`;

@@ -13,7 +13,8 @@
 2. Backend kiểm tra quyền, MIME/extension/size, sinh path ngẫu nhiên.
 3. Upload private bucket; backend xác minh checksum/size rồi tạo version.
 4. Worker đặt `extraction_status: pending→processing→ready|failed|unsupported`.
-5. File gốc luôn giữ riêng; text trích xuất và chunks không thay thế file gốc.
+5. Khi extraction `ready`, queue embedding chạy theo batch tối đa 64 chunks và đặt `embedding_status: pending→processing→ready|failed`; lỗi embedding không làm mất full-text search.
+6. File gốc luôn giữ riêng; text trích xuất và chunks không thay thế file gốc.
 
 ## Định dạng
 
@@ -29,7 +30,7 @@
 ## Metadata và tìm kiếm
 
 - Title, folder, version, MIME, size, checksum, uploader, scope, created/updated, extraction status.
-- Tìm theo title/metadata; full-text trên nội dung đã trích xuất; semantic search chỉ khi `ready`.
+- Tìm theo title/metadata; full-text trên nội dung đã trích xuất; semantic dùng Google `gemini-embedding-001` 1536 chiều khi embedding `ready`.
 - Kết quả tìm kiếm luôn lọc quyền trước xếp hạng; citation gồm document, version, page/slide/sheet/chunk.
 
 ## Cập nhật và xóa
@@ -44,4 +45,3 @@
 - File không hợp lệ/quá giới hạn bị từ chối; upload lỗi không để metadata “ready”.
 - Preview fallback sang tải; trạng thái xử lý và lỗi thân thiện.
 - AI không truy xuất chunk của version đã xóa hoặc tài liệu mất quyền.
-

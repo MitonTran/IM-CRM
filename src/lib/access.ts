@@ -11,8 +11,8 @@ export type Profile = {
 
 export const ROLE_LABELS: Record<AppRole, string> = {
   admin: "Quản trị viên",
-  leader: "Sale Leader",
-  sale: "Nhân viên Sale",
+  leader: "Trưởng nhóm",
+  sale: "Tư vấn viên",
 };
 
 export function canManagePeople(role: AppRole) {

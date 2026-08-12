@@ -52,14 +52,14 @@ Score là gợi ý 0–100, không dùng tự động phân công hay loại kh�
 | `get_kpi_summary(period, filters)` | KPI đã định nghĩa | ép user/team theo role |
 | `get_revenue_summary(period, group_by)` | tổng hợp deal | scope theo role |
 | `get_funnel_summary(period, filters)` | phễu | scope theo role |
-| `search_documents(query, filters)` | full-text search chunks; có thể bổ sung semantic ranking khi chốt embedding model | lọc document ACL trước trả chunks |
+| `search_documents(query, filters)` | hybrid RRF giữa full-text và cosine semantic; fallback full-text nếu embedding chưa sẵn sàng | lọc document ACL trước trả chunks |
 | `get_document_excerpt(version_id, locator)` | đoạn trích có citation | kiểm tra lại ACL/version |
 
 Tool không nhận `user_id/team_id` tùy ý từ model; backend lấy session và giao phần giao với filter được phép. Output giới hạn dòng/kích thước, không trả trường không cần thiết.
 
 ## RAG và citation
 
-1. Xác thực user và quota.
+1. Xác thực user và kiểm tra module AI đang bật.
 2. Phân loại câu hỏi; gọi tool có cấu trúc.
 3. Với tài liệu, lọc ACL trước retrieval, trả chunk kèm document/version/page/slide/sheet.
 4. Model trả lời chỉ dựa trên context; citation mở được phải kiểm tra quyền lại.
@@ -69,18 +69,19 @@ Tool không nhận `user_id/team_id` tùy ý từ model; backend lấy session v
 
 - Lưu conversation/message, tool name + tham số đã che, citations, tokens, model, latency, cost estimate, trạng thái lỗi.
 - Provider/model được chọn bằng cấu hình server allowlist. API key không lưu database, không trả frontend; endpoint tùy ý không được phép để tránh gửi CRM tới đích ngoài kiểm soát.
-- Giới hạn request/user/ngày, token đầu vào, số chunk, số activity và timeout; cache tổng hợp không nhạy cảm theo user/scope.
-- Cho Admin cấu hình bật/tắt AI và quota; cảnh báo khi gần ngưỡng. Không dùng dữ liệu thật cho môi trường dev/test.
+- Trợ lý hỏi đáp không giới hạn số lượt ở tầng CRM; vẫn giới hạn token đầu vào, số chunk, số activity và timeout. Provider có thể áp quota/rate limit riêng; cache tổng hợp không nhạy cảm theo user/scope.
+- Cho Admin cấu hình bật/tắt AI và quota cho phân tích khách hàng. Không dùng dữ liệu thật cho môi trường dev/test.
 - Retention lịch sử AI mặc định 90 ngày; người dùng chỉ xem hội thoại của mình. Việc purge chạy bằng RPC chỉ cấp cho `service_role` và cần được scheduler server gọi định kỳ.
 
 ## Hợp đồng triển khai M6.3
 
 - Planner trả tối đa 3 tool calls và bị Zod từ chối nếu có tool/argument ngoài allowlist; model không nhận `user_id`, `team_id`, SQL hoặc endpoint.
 - Mọi tool CRM/RAG chạy bằng Supabase client của phiên đăng nhập. `service_role` chỉ hoàn tất trạng thái/kết quả AI sau khi backend kiểm tra citation và không dùng để đọc dữ liệu nguồn.
-- Retrieval tài liệu hiện dùng full-text search có giới hạn 6 chunks, tối đa 1.800 ký tự/chunk. RLS của document/version/chunk được áp dụng trước ranking.
+- Retrieval tài liệu dùng hybrid RRF giữa full-text và Google `gemini-embedding-001` 1536 chiều, giới hạn 6 chunks và tối đa 1.800 ký tự/chunk. Nếu key/query embedding lỗi, tool fallback full-text. RLS của document/version/chunk được áp dụng trước khi trả kết quả.
 - Citation tài liệu lưu `document_id`, `version_id` và locator; route mở file kiểm tra lại RLS rồi mới cấp signed URL 60 giây.
 - Audit chỉ lưu trạng thái, model, token và latency; không sao chép câu hỏi, câu trả lời, nội dung chunk hoặc payload tool.
-- `ai_request_ledger` giữ quota dùng chung giữa phân tích khách hàng và hỏi đáp, khóa theo user/ngày Việt Nam để tránh request đồng thời vượt ngưỡng.
+- `ai_request_ledger` tiếp tục ghi mọi lượt để audit/usage. `daily_request_quota` chỉ giới hạn phân tích khách hàng; trợ lý hỏi đáp không bị chặn theo lượt ở tầng CRM.
+- Khi provider chính là Groq, trợ lý thử Google Gemini đúng một lần nếu Groq trả `429`, lỗi `5xx`, lỗi kết nối hoặc timeout. Lỗi xác thực/cấu hình không được che giấu bằng fallback.
 
 ## Điểm duyệt 4
 

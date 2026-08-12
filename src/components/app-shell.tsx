@@ -14,8 +14,8 @@ export function AppShell({ profile, teamName, children }: { profile: Profile; te
         {canManagePeople(profile.role) && (
           <div className="mt-8 border-t border-[#e5ebe7] pt-5">
             <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[.14em] text-[#93a099]">Quản trị</p>
-            <Link href="/admin/people" className="focus-ring flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold text-[#506159] hover:bg-[#f0f4f1]"><UsersRound size={19} /> Nhân sự & team</Link>
-            <span className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold text-[#a0aaa5]"><Settings2 size={19} /> Cấu hình</span>
+            <Link href="/admin/people" className="focus-ring flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold text-[#506159] hover:bg-[#f0f4f1]"><UsersRound size={19} /> Nhân sự & nhóm</Link>
+            <span className="flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold text-[#a0aaa5]"><Settings2 size={19} /> Thiết lập chung</span>
           </div>
         )}
         <div className="mt-auto rounded-2xl border border-[#e2e9e4] bg-[#f7f9f7] p-3">

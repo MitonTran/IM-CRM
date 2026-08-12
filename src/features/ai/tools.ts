@@ -1,7 +1,10 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { hasGeminiEmbeddingEnv } from "@/lib/env";
 import type { AiPeriod, AiToolCall, AiToolEvidence, AiToolResult } from "./assistant-schema";
+import { toPgVector } from "./embedding-contract";
+import { createGeminiEmbeddings } from "./gemini-embeddings";
 import { aiPeriodBounds, vietnamDateKey } from "./period";
 
 type ScopedClient = SupabaseClient;
@@ -52,7 +55,7 @@ async function listFollowUps(supabase: ScopedClient, window: "overdue" | "today"
   const result = await query.order("due_at", { ascending: true }).limit(20);
   if (result.error) throw new Error(`ai_tool_follow_ups:${result.error.message}`);
   const href = `/tasks?scope=${window === "next_7_days" ? "upcoming" : window}`;
-  const evidence = crmEvidence("list_follow_ups", href, `Danh sách follow-up ${window}`);
+  const evidence = crmEvidence("list_follow_ups", href, `Danh sách lịch chăm sóc ${window}`);
   return { tool: "list_follow_ups", data: { evidence_id: evidence.id, window, tasks: result.data ?? [] }, evidence: [evidence], resultCount: result.data?.length ?? 0 };
 }
 
@@ -107,7 +110,21 @@ function documentResult(tool: "search_documents" | "get_document_excerpt", rows:
 }
 
 async function searchDocuments(supabase: ScopedClient, query: string) {
-  const result = await supabase.rpc("search_documents", { search_text: query, max_results: 6 });
+  let result;
+  if (hasGeminiEmbeddingEnv()) {
+    try {
+      const [embedding] = await createGeminiEmbeddings([query], "RETRIEVAL_QUERY");
+      result = await supabase.rpc("search_documents_hybrid", {
+        search_text: query,
+        query_embedding: toPgVector(embedding),
+        max_results: 6,
+      });
+    } catch {
+      result = await supabase.rpc("search_documents", { search_text: query, max_results: 6 });
+    }
+  } else {
+    result = await supabase.rpc("search_documents", { search_text: query, max_results: 6 });
+  }
   if (result.error) throw new Error(`ai_tool_document_search:${result.error.message}`);
   return documentResult("search_documents", (result.data ?? []) as DocumentChunk[]);
 }
