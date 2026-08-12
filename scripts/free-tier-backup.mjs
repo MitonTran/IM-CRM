@@ -8,6 +8,7 @@ import { createClient } from "@supabase/supabase-js";
 import {
   BACKUP_BUCKETS,
   BACKUP_FORMAT_VERSION,
+  buildRoleDumpCommand,
   encryptFile,
   ensureDirectory,
   resolveObjectDestination,
@@ -28,6 +29,18 @@ function run(command, args) {
   invariant(result.status === 0, `${command} ${args[0] ?? ""} thất bại với mã ${result.status ?? "không xác định"}.`);
 }
 
+function runCaptured(command, args, extraEnvironment = {}) {
+  const result = spawnSync(command, args, {
+    encoding: "utf8",
+    env: { ...process.env, ...extraEnvironment, SUPABASE_TELEMETRY_DISABLED: "1" },
+    maxBuffer: 10 * 1024 * 1024,
+  });
+  if (result.error) throw result.error;
+  if (result.status !== 0 && result.stderr) process.stderr.write(result.stderr);
+  invariant(result.status === 0, `${command} ${args[0] ?? ""} thất bại với mã ${result.status ?? "không xác định"}.`);
+  return result.stdout;
+}
+
 async function fileEntry(rootDirectory, filePath) {
   const details = await stat(filePath);
   return {
@@ -39,7 +52,6 @@ async function fileEntry(rootDirectory, filePath) {
 
 async function dumpDatabase(dbUrl, bundleDirectory) {
   const definitions = [
-    { name: "roles.sql", args: ["--role-only"] },
     { name: "schema.sql", args: [] },
     { name: "data.sql", args: ["--use-copy", "--data-only", "-x", "storage.buckets_vectors", "-x", "storage.vector_indexes"] },
     { name: "migration-schema.sql", args: ["--schema", "supabase_migrations"] },
@@ -47,6 +59,13 @@ async function dumpDatabase(dbUrl, bundleDirectory) {
   ];
   const databaseDirectory = await ensureDirectory(path.join(bundleDirectory, "database"));
   const entries = [];
+
+  const rolesDestination = path.join(databaseDirectory, "roles.sql");
+  const roleDump = buildRoleDumpCommand(dbUrl);
+  const rolesSql = runCaptured(roleDump.command, roleDump.args, roleDump.env);
+  invariant(/^(?:CREATE|ALTER)\s+ROLE\s+/imu.test(rolesSql), "Role dump không chứa role để kiểm tra.");
+  await writeFile(rolesDestination, rolesSql, { flag: "wx", mode: 0o600 });
+  entries.push(await fileEntry(bundleDirectory, rolesDestination));
 
   for (const definition of definitions) {
     const destination = path.join(databaseDirectory, definition.name);

@@ -6,6 +6,7 @@ import { pipeline } from "node:stream/promises";
 
 export const BACKUP_BUCKETS = ["document-extracted", "documents"];
 export const BACKUP_FORMAT_VERSION = 1;
+export const BACKUP_POSTGRES_IMAGE = "ghcr.io/supabase/postgres:17.6.1.156";
 export const REQUIRED_DATABASE_BACKUP_FILES = [
   "database/data.sql",
   "database/migration-data.sql",
@@ -70,6 +71,36 @@ export function validateBackupConfiguration({ supabaseUrl, dbUrl, expectedProjec
   invariant(directMatch || poolerMatch, "Database URL không khớp project ref đã duyệt.");
 
   return { projectRef: expectedProjectRef, sourceEnvironment, supabaseUrl: api.origin, dbUrl: database.href };
+}
+
+export function buildRoleDumpCommand(dbUrl, postgresImage = BACKUP_POSTGRES_IMAGE) {
+  const database = new URL(dbUrl);
+  invariant(database.protocol === "postgresql:" || database.protocol === "postgres:", "Database URL phải dùng PostgreSQL.");
+  invariant(database.hostname && database.username && database.password, "Database URL thiếu thông tin kết nối role dump.");
+  invariant(typeof postgresImage === "string" && postgresImage.startsWith("ghcr.io/supabase/postgres:"), "Postgres image không hợp lệ.");
+
+  return {
+    command: "docker",
+    args: [
+      "run",
+      "--rm",
+      "-e",
+      "PGPASSWORD",
+      postgresImage,
+      "pg_dumpall",
+      "--roles-only",
+      "--no-role-passwords",
+      "--host",
+      database.hostname,
+      "--port",
+      database.port || "5432",
+      "--username",
+      decodeURIComponent(database.username),
+      "--database",
+      decodeURIComponent(database.pathname.replace(/^\//, "") || "postgres"),
+    ],
+    env: { PGPASSWORD: decodeURIComponent(database.password) },
+  };
 }
 
 export function validateRestoreConfiguration({

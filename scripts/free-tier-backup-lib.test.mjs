@@ -9,6 +9,7 @@ import {
   assertRestorableBackupManifest,
   assertSafeArchiveEntries,
   assertSafeObjectPath,
+  buildRoleDumpCommand,
   decryptFile,
   encryptFile,
   extractRoleNamesFromDump,
@@ -48,6 +49,18 @@ describe("free tier backup guardrails", () => {
       expectedProjectRef: "abcdefghijklmnopqrst",
       sourceEnvironment: "preview",
     })).toThrow(/không khớp/);
+  });
+
+  it("tạo role dump qua Session pooler mà không đưa password vào command line", () => {
+    const command = buildRoleDumpCommand(
+      "postgresql://postgres.abcdefghijklmnopqrst:p%3Dword@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres",
+    );
+
+    expect(command.command).toBe("docker");
+    expect(command.args).toContain("postgres.abcdefghijklmnopqrst");
+    expect(command.args).toContain("--no-role-passwords");
+    expect(command.args.join(" ")).not.toContain("p=word");
+    expect(command.env).toEqual({ PGPASSWORD: "p=word" });
   });
 
   it("chặn object path traversal và bucket ngoài allowlist", () => {
