@@ -26,7 +26,8 @@
     "db:restore-drill": "node scripts/restore-drill.mjs",
     "backup:free": "node scripts/free-tier-backup.mjs",
     "backup:free:verify": "node scripts/free-tier-backup-verify.mjs",
-    "restore:hosted": "node scripts/free-tier-restore-hosted.mjs"
+    "restore:hosted": "node scripts/free-tier-restore-hosted.mjs",
+    "restore:hosted:uat": "node scripts/hosted-restore-uat.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.4",
