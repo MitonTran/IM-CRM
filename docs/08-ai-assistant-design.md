@@ -59,7 +59,7 @@ Tool không nhận `user_id/team_id` tùy ý từ model; backend lấy session v
 
 ## RAG và citation
 
-1. Xác thực user và quota.
+1. Xác thực user và kiểm tra module AI đang bật.
 2. Phân loại câu hỏi; gọi tool có cấu trúc.
 3. Với tài liệu, lọc ACL trước retrieval, trả chunk kèm document/version/page/slide/sheet.
 4. Model trả lời chỉ dựa trên context; citation mở được phải kiểm tra quyền lại.
@@ -69,8 +69,8 @@ Tool không nhận `user_id/team_id` tùy ý từ model; backend lấy session v
 
 - Lưu conversation/message, tool name + tham số đã che, citations, tokens, model, latency, cost estimate, trạng thái lỗi.
 - Provider/model được chọn bằng cấu hình server allowlist. API key không lưu database, không trả frontend; endpoint tùy ý không được phép để tránh gửi CRM tới đích ngoài kiểm soát.
-- Giới hạn request/user/ngày, token đầu vào, số chunk, số activity và timeout; cache tổng hợp không nhạy cảm theo user/scope.
-- Cho Admin cấu hình bật/tắt AI và quota; cảnh báo khi gần ngưỡng. Không dùng dữ liệu thật cho môi trường dev/test.
+- Trợ lý hỏi đáp không giới hạn số lượt ở tầng CRM; vẫn giới hạn token đầu vào, số chunk, số activity và timeout. Provider có thể áp quota/rate limit riêng; cache tổng hợp không nhạy cảm theo user/scope.
+- Cho Admin cấu hình bật/tắt AI và quota cho phân tích khách hàng. Không dùng dữ liệu thật cho môi trường dev/test.
 - Retention lịch sử AI mặc định 90 ngày; người dùng chỉ xem hội thoại của mình. Việc purge chạy bằng RPC chỉ cấp cho `service_role` và cần được scheduler server gọi định kỳ.
 
 ## Hợp đồng triển khai M6.3
@@ -80,7 +80,8 @@ Tool không nhận `user_id/team_id` tùy ý từ model; backend lấy session v
 - Retrieval tài liệu dùng hybrid RRF giữa full-text và Google `gemini-embedding-001` 1536 chiều, giới hạn 6 chunks và tối đa 1.800 ký tự/chunk. Nếu key/query embedding lỗi, tool fallback full-text. RLS của document/version/chunk được áp dụng trước khi trả kết quả.
 - Citation tài liệu lưu `document_id`, `version_id` và locator; route mở file kiểm tra lại RLS rồi mới cấp signed URL 60 giây.
 - Audit chỉ lưu trạng thái, model, token và latency; không sao chép câu hỏi, câu trả lời, nội dung chunk hoặc payload tool.
-- `ai_request_ledger` giữ quota dùng chung giữa phân tích khách hàng và hỏi đáp, khóa theo user/ngày Việt Nam để tránh request đồng thời vượt ngưỡng.
+- `ai_request_ledger` tiếp tục ghi mọi lượt để audit/usage. `daily_request_quota` chỉ giới hạn phân tích khách hàng; trợ lý hỏi đáp không bị chặn theo lượt ở tầng CRM.
+- Khi provider chính là Groq, trợ lý thử Google Gemini đúng một lần nếu Groq trả `429`, lỗi `5xx`, lỗi kết nối hoặc timeout. Lỗi xác thực/cấu hình không được che giấu bằng fallback.
 
 ## Điểm duyệt 4
 

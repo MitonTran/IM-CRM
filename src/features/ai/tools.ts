@@ -55,7 +55,7 @@ async function listFollowUps(supabase: ScopedClient, window: "overdue" | "today"
   const result = await query.order("due_at", { ascending: true }).limit(20);
   if (result.error) throw new Error(`ai_tool_follow_ups:${result.error.message}`);
   const href = `/tasks?scope=${window === "next_7_days" ? "upcoming" : window}`;
-  const evidence = crmEvidence("list_follow_ups", href, `Danh sách follow-up ${window}`);
+  const evidence = crmEvidence("list_follow_ups", href, `Danh sách lịch chăm sóc ${window}`);
   return { tool: "list_follow_ups", data: { evidence_id: evidence.id, window, tasks: result.data ?? [] }, evidence: [evidence], resultCount: result.data?.length ?? 0 };
 }
 

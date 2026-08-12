@@ -1,0 +1,49 @@
+name: Free tier encrypted backup
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "15 18 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: free-tier-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    if: github.event_name == 'workflow_dispatch' || vars.FREE_BACKUP_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      FREE_BACKUP_DB_URL: ${{ secrets.FREE_BACKUP_DB_URL }}
+      FREE_BACKUP_SUPABASE_URL: ${{ secrets.FREE_BACKUP_SUPABASE_URL }}
+      FREE_BACKUP_SERVICE_ROLE_KEY: ${{ secrets.FREE_BACKUP_SERVICE_ROLE_KEY }}
+      BACKUP_ENCRYPTION_KEY: ${{ secrets.BACKUP_ENCRYPTION_KEY }}
+      FREE_BACKUP_PROJECT_REF: ${{ vars.FREE_BACKUP_PROJECT_REF }}
+      FREE_BACKUP_SOURCE_ENV: ${{ vars.FREE_BACKUP_SOURCE_ENV }}
+      BACKUP_OUTPUT_DIR: test-results/free-tier-backup
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - uses: supabase/setup-cli@v3
+        with:
+          version: latest
+      - run: npm ci
+      - id: backup
+        run: npm run backup:free
+      - name: Verify encrypted bundle
+        env:
+          BACKUP_FILE: ${{ steps.backup.outputs.backup_file }}
+        run: npm run backup:free:verify
+      - uses: actions/upload-artifact@v4
+        with:
+          name: im-crm-${{ vars.FREE_BACKUP_SOURCE_ENV }}-encrypted-backup
+          path: ${{ steps.backup.outputs.backup_file }}
+          if-no-files-found: error
+          retention-days: 14

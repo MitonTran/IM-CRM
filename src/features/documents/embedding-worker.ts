@@ -32,22 +32,22 @@ function failureCode(error: unknown): EmbeddingFailureCode {
 function safeEmbeddingError(code: EmbeddingFailureCode) {
   switch (code) {
     case "unauthorized":
-      return "Gemini từ chối API key. Kiểm tra GEMINI_API_KEY của Preview.";
+      return "Tài liệu chưa thể sẵn sàng cho trợ lý AI. Vui lòng liên hệ quản trị viên.";
     case "quota_exceeded":
-      return "Gemini đã hết quota hoặc đang giới hạn tần suất. Hãy thử lại sau.";
+      return "Trợ lý AI đang bận. Hệ thống sẽ thử lại sau.";
     case "invalid_request":
-      return "Gemini không chấp nhận yêu cầu embedding. Kiểm tra cấu hình model.";
+      return "Chưa thể chuẩn bị tài liệu cho trợ lý AI. Tìm kiếm theo từ khóa vẫn hoạt động.";
     case "provider_unavailable":
-      return "Dịch vụ embedding Gemini đang tạm thời không khả dụng. Hãy thử lại sau.";
+      return "Trợ lý AI đang bận. Hệ thống sẽ thử lại sau.";
     case "invalid_response":
-      return "Gemini trả về vector không đúng hợp đồng 1536 chiều.";
+      return "Chưa thể chuẩn bị tài liệu cho trợ lý AI. Tìm kiếm theo từ khóa vẫn hoạt động.";
     case "chunks_unavailable":
     case "chunks_empty":
-      return "Không thể đọc nội dung đã trích xuất để lập semantic index.";
+      return "Không đọc được nội dung tài liệu để chuẩn bị cho trợ lý AI.";
     case "commit_failed":
-      return "Không thể lưu vector Gemini vào semantic index Supabase.";
+      return "Chưa thể chuẩn bị tài liệu cho trợ lý AI. Tìm kiếm theo từ khóa vẫn hoạt động.";
     default:
-      return "Không thể tạo chỉ mục ngữ nghĩa. Tìm kiếm từ khóa vẫn hoạt động.";
+      return "Chưa thể chuẩn bị tài liệu cho trợ lý AI. Tìm kiếm theo từ khóa vẫn hoạt động.";
   }
 }
 

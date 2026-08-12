@@ -34,6 +34,7 @@ export function getSupabaseServiceRoleKey() {
 
 export const AI_PROVIDERS = ["openai", "openrouter", "gemini", "deepseek", "groq", "nvidia"] as const;
 export type AiProvider = (typeof AI_PROVIDERS)[number];
+export type AiProviderConfig = { provider: AiProvider; apiKey: string; model: string; baseURL?: string };
 export const AI_PROVIDER_LABELS: Record<AiProvider, string> = {
   openai: "OpenAI",
   openrouter: "OpenRouter",
@@ -67,8 +68,7 @@ export function hasAiProviderEnv() {
   }
 }
 
-export function getAiProviderConfig() {
-  const provider = getAiProvider();
+function getProviderConfig(provider: AiProvider, modelOverride?: string): AiProviderConfig {
   const providerConfig = AI_PROVIDER_CONFIG[provider];
   const apiKey = process.env[providerConfig.keyName];
   if (!isUsable(apiKey)) throw new Error(`Thiếu ${providerConfig.keyName} phía máy chủ.`);
@@ -77,9 +77,18 @@ export function getAiProviderConfig() {
   return {
     provider,
     apiKey: apiKey!,
-    model: process.env.AI_MODEL?.trim() || legacyOpenAIModel || providerConfig.defaultModel,
+    model: modelOverride || legacyOpenAIModel || providerConfig.defaultModel,
     baseURL: providerConfig.baseURL,
   };
+}
+
+export function getAiProviderConfig() {
+  return getProviderConfig(getAiProvider(), process.env.AI_MODEL?.trim());
+}
+
+export function getGeminiFallbackConfig() {
+  if (getAiProvider() !== "groq" || !isUsable(process.env.GEMINI_API_KEY)) return null;
+  return getProviderConfig("gemini", process.env.GEMINI_FALLBACK_MODEL?.trim());
 }
 
 export const GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";

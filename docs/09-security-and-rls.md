@@ -12,7 +12,7 @@
 
 - Tạo/sửa/xóa mềm khách; đổi status/owner/team; assignment.
 - Tạo/sửa/xóa activity quan trọng; hoàn thành/dời task.
-- Tạo/vô hiệu hóa deal; thay đổi KPI target.
+- Tạo/điều chỉnh/vô hiệu hóa deal; thay đổi KPI target. Điều chỉnh phải lưu liên kết bản cũ/bản thay thế và lý do, không ghi đè lịch sử.
 - Mời/khóa user, đổi role/team.
 - Upload/version/xóa/đổi quyền tài liệu; AI request và tool access ở mức metadata.
 - Log bất biến, tránh lưu secret; before/after che trường nhạy cảm và có request ID.

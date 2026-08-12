@@ -14,7 +14,7 @@ export default defineConfig({
   globalSetup: "./e2e/global-setup.ts",
   globalTeardown: "./e2e/global-teardown.ts",
   use: {
-    baseURL: "http://127.0.0.1:3200",
+    baseURL: "http://localhost:3200",
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
     video: "retain-on-failure",

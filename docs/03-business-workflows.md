@@ -40,7 +40,9 @@ Loại tối thiểu: `call`, `message`, `appointment`, `consultation`, `note`, 
 1. Sale/Leader nhập số doanh thu cuối cùng, ngày đăng ký và ghi chú tùy chọn.
 2. Backend xác nhận số tiền không âm, khách trong phạm vi, chống submit trùng bằng idempotency key.
 3. Tạo `deals`, activity `registration`, chuyển khách sang `won` nếu chưa ở trạng thái này.
-4. Sửa/vô hiệu hóa giao dịch phải có lý do và audit; KPI tính giao dịch `active` theo `registered_at`.
+4. Điều chỉnh giao dịch bắt buộc lý do: backend khóa bản active, vô hiệu bản cũ và tạo một bản thay thế liên kết trong cùng transaction. Không cập nhật đè số tiền/ngày/note và không để bản thay thế mồ côi.
+5. Sale chỉ điều chỉnh deal do chính mình tạo trong 24 giờ; Leader được điều chỉnh trong team, Admin toàn hệ thống. Vô hiệu hóa độc lập vẫn chỉ dành cho Leader/Admin.
+6. Idempotency key và unique replacement bảo đảm retry/double-submit không tạo hai bản chồng nhau; KPI chỉ tính giao dịch `active` theo `registered_at`.
 
 ## Một ngày làm việc của Sale
 
@@ -48,4 +50,3 @@ Loại tối thiểu: `call`, `message`, `appointment`, `consultation`, `note`, 
 2. Thực hiện liên hệ và ghi activity ngay sau tương tác.
 3. Chọn bước tiếp theo; cập nhật trạng thái khi đủ căn cứ.
 4. Cuối ngày xử lý task còn quá hạn và kiểm tra tiến độ KPI.
-

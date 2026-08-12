@@ -12,12 +12,12 @@ Mọi màn hình có skeleton/loading, lỗi có mã tham chiếu và nút thử
 | Việc của tôi/team | Sale own; Leader team; Admin all | task nhóm quá hạn/hôm nay/sắp tới | hoàn thành, dời lịch, mở khách | assignee, due range, priority, status | chúc mừng khi hết việc; lỗi không mất lựa chọn |
 | KPI cá nhân | authenticated | mục tiêu, thực tế, tiến độ, xu hướng | đổi kỳ, drill-down nguồn | ngày/tháng/năm, source | nêu rõ chưa đặt mục tiêu/không dữ liệu |
 | KPI team | Leader/Admin | bảng Sale, tổng team, conversion | đặt mục tiêu, drill-down | team, user, kỳ, source | team chưa có Sale; lỗi widget |
-| Giao dịch | theo phạm vi | khách, owner, amount, ngày, status | tạo; Leader/Admin vô hiệu hóa | kỳ, owner/team/source/status | chưa có doanh thu; validation tiền |
+| Giao dịch | theo phạm vi | khách, owner, amount, ngày, status, chuỗi điều chỉnh | tạo; Sale sửa bản tự tạo trong 24 giờ; Leader/Admin sửa hoặc vô hiệu hóa | kỳ, owner/team/source/status | chưa có doanh thu; validation tiền/lý do; bản cũ và bản thay thế hiển thị rõ |
 | Kho tài liệu | theo scope | cây thư mục, file, version, trạng thái AI | upload, tạo thư mục, preview, tải; có quyền thì sửa/xóa | scope, loại file, trạng thái, tìm kiếm | hướng dẫn upload; lỗi file riêng |
 | Chi tiết tài liệu | theo scope | metadata, preview, version, quyền, trạng thái trích xuất | tải, tạo version, reprocess nếu có quyền | version | preview không hỗ trợ thì tải; lỗi xử lý rõ |
 | AI phân tích khách | theo quyền khách | snapshot time, summary, score, objections, actions | chạy lại, copy gợi ý | phiên bản phân tích | cảnh báo thiếu dữ liệu/AI hỗ trợ |
 | AI hỏi đáp | authenticated | hội thoại, câu trả lời, citations, usage tùy quyền | hỏi, mở nguồn, phản hồi | phạm vi thời gian/team theo quyền | câu hỏi mẫu; trạng thái không đủ dữ liệu |
-| Quản trị user/team | Admin | user, role, team, trạng thái | mời, khóa, đổi role/team | team/role/status | CTA mời; cảnh báo ảnh hưởng assignment |
+| Quản trị user/team | Admin | họ tên, email đăng nhập từ Auth, role, team, trạng thái | mời, đổi tên, khóa/kích hoạt user, đổi role/team; tạo, đổi tên, ngừng/kích hoạt team | team/role/status | CTA mời; cảnh báo và chặn khi còn member, khách hoặc task mở; không xóa cứng |
 | Audit | Admin | actor, action, entity, thời gian, diff an toàn | xem chi tiết/xuất sau MVP | thời gian, actor, entity, action | không log; payload lỗi được che |
 
 ## Form khách hàng tối thiểu
