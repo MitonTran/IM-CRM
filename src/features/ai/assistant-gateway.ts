@@ -4,8 +4,9 @@ import { createHash } from "node:crypto";
 import OpenAI from "openai";
 import { zodResponseFormat, zodTextFormat } from "openai/helpers/zod";
 import type { z } from "zod";
-import { getAiProviderConfig, type AiProvider } from "@/lib/env";
+import { type AiProvider, type AiProviderConfig } from "@/lib/env";
 import { parseJsonObjectContent } from "./response-parser";
+import { withAssistantProviderFallback } from "./provider-fallback";
 import {
   aiAssistantAnswerSchema, aiToolPlanSchema,
   type AiAssistantAnswer, type AiToolPlan, type AiToolResult,
@@ -39,7 +40,7 @@ function modelAuditName(provider: AiProvider, model: string) {
   return `${provider}:${model}`.slice(0, 120);
 }
 
-function compatibleClient(config: ReturnType<typeof getAiProviderConfig>) {
+function compatibleClient(config: AiProviderConfig) {
   const defaultHeaders = config.provider === "openrouter" ? {
     "HTTP-Referer": process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     "X-Title": "IM CRM",
@@ -55,7 +56,17 @@ async function structuredCall<T>(input: {
   maxOutputTokens: number;
   userId: string;
 }): Promise<UsageOutput<T>> {
-  const config = getAiProviderConfig();
+  return withAssistantProviderFallback((config) => structuredCallWithConfig(config, input));
+}
+
+async function structuredCallWithConfig<T>(config: AiProviderConfig, input: {
+  schema: z.ZodType<T>;
+  schemaName: string;
+  system: string;
+  user: string;
+  maxOutputTokens: number;
+  userId: string;
+}): Promise<UsageOutput<T>> {
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: input.system }, { role: "user", content: input.user },
   ];

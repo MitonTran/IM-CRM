@@ -1,12 +1,15 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(34);
+select plan(57);
 
 select has_table('public', 'deals', 'deals table exists');
 select policies_are('public', 'deals', array['deals_select_by_customer'], 'deals use explicit customer-scope policy');
 select has_function('public', 'register_deal', array['uuid', 'numeric', 'timestamp with time zone', 'uuid', 'text', 'boolean'], 'register deal RPC exists');
 select has_function('public', 'void_deal', array['uuid', 'text'], 'void deal RPC exists');
+select has_column('public', 'deals', 'replaces_deal_id', 'Deals record the prior version they replace');
+select has_column('public', 'deals', 'amendment_reason', 'Deal replacements require an amendment reason');
+select has_function('public', 'amend_deal', array['uuid', 'numeric', 'timestamp with time zone', 'text', 'text', 'uuid'], 'Amend deal RPC exists');
 
 insert into auth.users(id, instance_id, aud, role, email, raw_user_meta_data)
 values
@@ -166,6 +169,162 @@ select ok(
   'Deal audit redacts note and idempotency key'
 );
 select results_eq('select sum(amount_vnd)::numeric from public.deals', array[600000000::numeric], 'VND amounts remain exact numeric values');
+
+reset role;
+insert into public.customers(id, full_name, phone, source_id, owner_user_id, team_id, created_by, updated_by)
+values
+  ('82000000-0000-0000-0000-000000000003', 'Deal Khách Điều Chỉnh', '0922000003', (select id from public.lead_sources where name = 'Website'), '80000000-0000-0000-0000-000000000004', '81000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000001'),
+  ('82000000-0000-0000-0000-000000000004', 'Deal Khách Quá Hạn A', '0922000004', (select id from public.lead_sources where name = 'Website'), '80000000-0000-0000-0000-000000000004', '81000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000001'),
+  ('82000000-0000-0000-0000-000000000005', 'Deal Khách Quá Hạn B', '0922000005', (select id from public.lead_sources where name = 'Facebook'), '80000000-0000-0000-0000-000000000005', '81000000-0000-0000-0000-000000000002', '80000000-0000-0000-0000-000000000001', '80000000-0000-0000-0000-000000000001');
+insert into public.deals(id, customer_id, owner_user_id, team_id, amount_vnd, registered_at, idempotency_key, note, created_at, created_by, updated_by)
+values
+  ('86000000-0000-0000-0000-000000000002', '82000000-0000-0000-0000-000000000004', '80000000-0000-0000-0000-000000000004', '81000000-0000-0000-0000-000000000001', 200000000, now() - interval '1 hour', '85000000-0000-0000-0000-000000000020', 'Sai số cũ A', now() - interval '25 hours', '80000000-0000-0000-0000-000000000004', '80000000-0000-0000-0000-000000000004'),
+  ('86000000-0000-0000-0000-000000000003', '82000000-0000-0000-0000-000000000005', '80000000-0000-0000-0000-000000000005', '81000000-0000-0000-0000-000000000002', 300000000, now() - interval '1 hour', '85000000-0000-0000-0000-000000000030', 'Sai số cũ B', now() - interval '25 hours', '80000000-0000-0000-0000-000000000005', '80000000-0000-0000-0000-000000000005');
+update public.customers set status = 'won' where id in (
+  '82000000-0000-0000-0000-000000000004',
+  '82000000-0000-0000-0000-000000000005'
+);
+
+set local role authenticated;
+select set_config('request.jwt.claims', '{"sub":"80000000-0000-0000-0000-000000000004","role":"authenticated"}', true);
+select lives_ok(
+  $$select public.register_deal(
+    '82000000-0000-0000-0000-000000000003', 100000000, now(),
+    '85000000-0000-0000-0000-000000000010', 'Bản gốc cần sửa', false
+  )$$,
+  'Sale A creates an own deal for amendment testing'
+);
+select lives_ok(
+  $$select public.amend_deal(
+    (select id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000010'),
+    125000000, now(), 'Bản đã sửa', 'Nhập sai doanh thu',
+    '85000000-0000-0000-0000-000000000011'
+  )$$,
+  'Sale A can amend a deal they created within 24 hours'
+);
+select results_eq(
+  $$select status::text from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000010'$$,
+  array['void'::text], 'Amendment voids the original deal'
+);
+select results_eq(
+  $$select amount_vnd::numeric from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000011' and status = 'active'$$,
+  array[125000000::numeric], 'Amendment creates one active replacement with the corrected amount'
+);
+select results_eq(
+  $$select replaces_deal_id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000011'$$,
+  $$select id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000010'$$,
+  'Replacement keeps a foreign-key link to the original deal'
+);
+select results_eq(
+  $$select public.amend_deal(
+    (select id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000010'),
+    999000000, now(), 'Retry khác payload', 'Retry cùng request',
+    '85000000-0000-0000-0000-000000000011'
+  )$$,
+  $$select id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000011'$$,
+  'Idempotent amendment retry returns the existing replacement'
+);
+select results_eq(
+  $$select count(*)::bigint from public.deals where replaces_deal_id = (select id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000010')$$,
+  array[1::bigint], 'Retry cannot create overlapping direct replacements'
+);
+select throws_ok(
+  $$select public.amend_deal(
+    (select id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000011'),
+    125000000,
+    (select registered_at from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000011'),
+    'Bản đã sửa', 'Không có thay đổi', '85000000-0000-0000-0000-000000000012'
+  )$$,
+  '22023', 'deal_amend_no_changes', 'No-op amendment cannot create a redundant version'
+);
+select throws_ok(
+  $$select public.amend_deal(
+    (select id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000010'),
+    130000000, now(), null, 'Sửa lại bản cũ', '85000000-0000-0000-0000-000000000013'
+  )$$,
+  '22023', 'deal_amend_inactive', 'An inactive original cannot be amended again'
+);
+select throws_ok(
+  $$select public.amend_deal(
+    '86000000-0000-0000-0000-000000000002', 210000000, now(), null,
+    'Sale sửa quá hạn', '85000000-0000-0000-0000-000000000021'
+  )$$,
+  '42501', 'deal_amend_window_expired', 'Sale cannot amend after the 24-hour window'
+);
+
+select set_config('request.jwt.claims', '{"sub":"80000000-0000-0000-0000-000000000005","role":"authenticated"}', true);
+select throws_ok(
+  $$select public.amend_deal(
+    (select id from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000011'),
+    1, now(), null, 'Thử sửa ngoài quyền', '85000000-0000-0000-0000-000000000014'
+  )$$,
+  '42501', 'deal_amend_denied', 'Sale B cannot amend Sale A replacement'
+);
+
+select set_config('request.jwt.claims', '{"sub":"80000000-0000-0000-0000-000000000003","role":"authenticated"}', true);
+select throws_ok(
+  $$select public.amend_deal(
+    '86000000-0000-0000-0000-000000000002', 210000000, now(), null,
+    'Leader B thử Team A', '85000000-0000-0000-0000-000000000022'
+  )$$,
+  '42501', 'deal_amend_denied', 'Leader B cannot amend a Team A deal'
+);
+
+select set_config('request.jwt.claims', '{"sub":"80000000-0000-0000-0000-000000000002","role":"authenticated"}', true);
+select lives_ok(
+  $$select public.amend_deal(
+    '86000000-0000-0000-0000-000000000002', 210000000, now(), 'Leader sửa đúng',
+    'Leader sửa giao dịch cũ', '85000000-0000-0000-0000-000000000023'
+  )$$,
+  'Leader A can amend an own-team deal after the Sale window'
+);
+select results_eq(
+  $$select amount_vnd::numeric from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000023' and status = 'active'$$,
+  array[210000000::numeric], 'Leader amendment leaves exactly the corrected active amount'
+);
+
+select set_config('request.jwt.claims', '{"sub":"80000000-0000-0000-0000-000000000001","role":"authenticated"}', true);
+select lives_ok(
+  $$select public.amend_deal(
+    '86000000-0000-0000-0000-000000000003', 310000000, now(), 'Admin sửa đúng',
+    'Admin sửa giao dịch Team B', '85000000-0000-0000-0000-000000000031'
+  )$$,
+  'Admin can amend an active deal in any team'
+);
+select results_eq(
+  $$select amount_vnd::numeric from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000031' and status = 'active'$$,
+  array[310000000::numeric], 'Admin amendment preserves one corrected active replacement'
+);
+select results_eq(
+  $$select sum(amount_vnd)::numeric from public.deals where status = 'active' and customer_id in (
+    '82000000-0000-0000-0000-000000000003',
+    '82000000-0000-0000-0000-000000000004',
+    '82000000-0000-0000-0000-000000000005'
+  )$$,
+  array[645000000::numeric], 'Only replacement amounts remain active for KPI calculations'
+);
+select results_eq(
+  $$select (public.get_kpi_summary(now() - interval '2 days', now() + interval '1 day')->>'revenue_vnd')::numeric$$,
+  array[645000000::numeric], 'KPI revenue counts corrected replacements and excludes superseded originals'
+);
+select ok(
+  not exists (
+    select 1 from public.deals replacement
+    left join public.deals original on original.id = replacement.replaces_deal_id
+    where replacement.replaces_deal_id is not null and original.id is null
+  ),
+  'Replacement chains contain no orphan deal records'
+);
+select ok(
+  exists (
+    select 1 from public.audit_logs
+    where entity_type = 'deals'
+      and after_data ->> 'replaces_deal_id' = (
+        select id::text from public.deals where idempotency_key = '85000000-0000-0000-0000-000000000010'
+      )
+  ),
+  'Amendment replacement and chain link are audited'
+);
 
 select * from finish();
 rollback;
