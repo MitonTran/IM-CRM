@@ -248,9 +248,9 @@ Bằng chứng automation ngày 2026-08-09 và phiên chốt sau UAT ngày 2026-
 
 | Vai trò | Họ tên | Kết quả | Thời gian UTC | Ghi chú/issue |
 |---|---|---|---|---|
-| Sale |  |  |  |  |
-| Leader |  |  |  |  |
-| Admin |  |  |  |  |
-| Release owner |  |  |  |  |
+| Sale | Miton Trần | Pass | 2026-08-12T02:13:42Z | Ký dựa trên UAT Preview và Hosted restore UAT; không phải phê duyệt Production. |
+| Leader | Miton Trần | Pass | 2026-08-12T02:13:42Z | Ký dựa trên UAT Preview và Hosted restore UAT; không phải phê duyệt Production. |
+| Admin | Miton Trần | Pass | 2026-08-12T02:13:42Z | Ký dựa trên UAT Preview và Hosted restore UAT; không phải phê duyệt Production. |
+| Release owner | Miton Trần | Pass | 2026-08-12T02:13:42Z | Chấp nhận kết quả UAT; merge và phát hành Production cần xác nhận riêng. |
 
-Chỉ khi cả bốn hàng được ký `Pass` và không còn P0/P1 mới được chuyển sang cổng Production trong `docs/15-production-runbook.md`.
+Cả bốn hàng đã được ký `Pass`; không có P0/P1 đang mở trong bằng chứng UAT. Dự án được phép chuyển sang bước chuẩn bị cổng Production trong `docs/15-production-runbook.md`, nhưng chưa được merge hoặc triển khai Production nếu chưa có xác nhận riêng.

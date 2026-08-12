@@ -45,7 +45,7 @@
 
 ## M7 Go-live
 
-- [ ] E2E/UAT ký duyệt bởi đại diện Sale, Leader, Admin.
+- [x] E2E/UAT ký duyệt bởi đại diện Sale, Leader, Admin.
 - [ ] Security/performance/smoke test đạt; lỗi nghiêm trọng đã đóng.
 - [ ] Backup, restore, incident và deploy/rollback runbook được diễn tập.
 - [ ] Production deploy qua Preview; theo dõi sau deploy và owner hỗ trợ rõ ràng.
