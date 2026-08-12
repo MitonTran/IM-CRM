@@ -37,7 +37,9 @@ export default async function globalSetup() {
   try {
     await sql.begin(async (tx) => {
       await tx`insert into public.teams(id,name,is_active) values
-        (${E2E_TEAMS.a.id}::uuid,${E2E_TEAMS.a.name},true),(${E2E_TEAMS.b.id}::uuid,${E2E_TEAMS.b.name},true)
+        (${E2E_TEAMS.a.id}::uuid,${E2E_TEAMS.a.name},true),
+        (${E2E_TEAMS.b.id}::uuid,${E2E_TEAMS.b.name},true),
+        (${E2E_TEAMS.empty.id}::uuid,${E2E_TEAMS.empty.name},true)
         on conflict(id) do update set name=excluded.name,is_active=true`;
       const profiles = [
         [id(E2E_USERS.admin.email), E2E_USERS.admin.fullName, "admin", null],
@@ -54,6 +56,10 @@ export default async function globalSetup() {
       await tx`update public.teams set leader_user_id=${id(E2E_USERS.leaderB.email)}::uuid where id=${E2E_TEAMS.b.id}::uuid`;
       const [source] = await tx<{ id: string }[]>`select id from public.lead_sources where name='Website'`;
       if (!source) throw new Error("Không tìm thấy nguồn Website cho E2E.");
+      const customerIds = Object.values(E2E_CUSTOMERS).map((customer) => customer.id);
+      await tx`delete from public.deals where replaces_deal_id in (select id from public.deals where customer_id = any(${customerIds}::uuid[]))`;
+      await tx`delete from public.deals where customer_id = any(${customerIds}::uuid[])`;
+      await tx`delete from public.activities where customer_id = any(${customerIds}::uuid[])`;
       const customers = [
         [E2E_CUSTOMERS.saleA.id, E2E_CUSTOMERS.saleA.name, "0900000101", id(E2E_USERS.saleA.email), E2E_TEAMS.a.id],
         [E2E_CUSTOMERS.saleB.id, E2E_CUSTOMERS.saleB.name, "0900000102", id(E2E_USERS.saleB.email), E2E_TEAMS.b.id],
@@ -62,7 +68,7 @@ export default async function globalSetup() {
       for (const [customerId, fullName, phone, ownerId, teamId] of customers) {
         await tx`insert into public.customers(id,full_name,phone,source_id,owner_user_id,team_id,created_by,updated_by)
           values (${customerId}::uuid,${fullName},${phone},${source.id}::uuid,${ownerId}::uuid,${teamId}::uuid,${id(E2E_USERS.admin.email)}::uuid,${id(E2E_USERS.admin.email)}::uuid)
-          on conflict(id) do update set full_name=excluded.full_name,phone=excluded.phone,source_id=excluded.source_id,owner_user_id=excluded.owner_user_id,team_id=excluded.team_id`;
+          on conflict(id) do update set full_name=excluded.full_name,phone=excluded.phone,source_id=excluded.source_id,owner_user_id=excluded.owner_user_id,team_id=excluded.team_id,status='new',status_reason=null,deleted_at=null,deleted_by=null,deleted_reason=null`;
       }
     });
   } finally {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { getAiProviderConfig, getSupabasePublicEnv, hasAiProviderEnv, hasSupabaseEnv } from "./env";
+import { getAiProviderConfig, getGeminiEmbeddingConfig, getGeminiFallbackConfig, getSupabasePublicEnv, hasAiProviderEnv, hasGeminiEmbeddingEnv, hasSupabaseEnv } from "./env";
 
 const previousUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const previousKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
@@ -10,7 +10,10 @@ const previousAiModel = process.env.AI_MODEL;
 const previousOpenRouterKey = process.env.OPENROUTER_API_KEY;
 const previousGeminiKey = process.env.GEMINI_API_KEY;
 const previousDeepSeekKey = process.env.DEEPSEEK_API_KEY;
+const previousGroqKey = process.env.GROQ_API_KEY;
 const previousNvidiaKey = process.env.NVIDIA_NIM_API_KEY;
+const previousEmbeddingModel = process.env.GEMINI_EMBEDDING_MODEL;
+const previousGeminiFallbackModel = process.env.GEMINI_FALLBACK_MODEL;
 
 afterEach(() => {
   process.env.NEXT_PUBLIC_SUPABASE_URL = previousUrl;
@@ -22,7 +25,10 @@ afterEach(() => {
   process.env.OPENROUTER_API_KEY = previousOpenRouterKey;
   process.env.GEMINI_API_KEY = previousGeminiKey;
   process.env.DEEPSEEK_API_KEY = previousDeepSeekKey;
+  process.env.GROQ_API_KEY = previousGroqKey;
   process.env.NVIDIA_NIM_API_KEY = previousNvidiaKey;
+  process.env.GEMINI_EMBEDDING_MODEL = previousEmbeddingModel;
+  process.env.GEMINI_FALLBACK_MODEL = previousGeminiFallbackModel;
 });
 
 describe("AI provider environment", () => {
@@ -47,6 +53,7 @@ describe("AI provider environment", () => {
     ["openrouter", "OPENROUTER_API_KEY", "or-test", "openrouter/free", "https://openrouter.ai/api/v1"],
     ["gemini", "GEMINI_API_KEY", "gemini-test", "gemini-3.1-flash-lite", "https://generativelanguage.googleapis.com/v1beta/openai/"],
     ["deepseek", "DEEPSEEK_API_KEY", "deepseek-test", "deepseek-v4-flash", "https://api.deepseek.com"],
+    ["groq", "GROQ_API_KEY", "groq-test", "openai/gpt-oss-20b", "https://api.groq.com/openai/v1"],
     ["nvidia", "NVIDIA_NIM_API_KEY", "nvidia-test", "nvidia/nemotron-3-nano-30b-a3b", "https://integrate.api.nvidia.com/v1"],
   ] as const)("selects %s with its fixed endpoint", (provider, keyName, key, model, baseURL) => {
     process.env.AI_PROVIDER = provider;
@@ -67,6 +74,19 @@ describe("AI provider environment", () => {
     expect(hasAiProviderEnv()).toBe(false);
     expect(() => getAiProviderConfig()).toThrow(/không được hỗ trợ/);
   });
+
+  it("configures a Gemini fallback only for a Groq primary without reusing the Groq model", () => {
+    process.env.AI_PROVIDER = "groq";
+    process.env.AI_MODEL = "openai/gpt-oss-20b";
+    process.env.GROQ_API_KEY = "groq-test";
+    process.env.GEMINI_API_KEY = "gemini-test";
+    delete process.env.GEMINI_FALLBACK_MODEL;
+    expect(getGeminiFallbackConfig()).toMatchObject({ provider: "gemini", model: "gemini-3.1-flash-lite" });
+    process.env.GEMINI_FALLBACK_MODEL = "gemini-fallback-test";
+    expect(getGeminiFallbackConfig()).toMatchObject({ provider: "gemini", model: "gemini-fallback-test" });
+    process.env.AI_PROVIDER = "openrouter";
+    expect(getGeminiFallbackConfig()).toBeNull();
+  });
 });
 
 describe("Supabase environment", () => {
@@ -86,5 +106,21 @@ describe("Supabase environment", () => {
       url: "https://example.supabase.co",
       publishableKey: "sb_publishable_test",
     });
+  });
+});
+
+describe("Gemini document embedding environment", () => {
+  it("requires a real server-only Gemini key", () => {
+    process.env.GEMINI_API_KEY = "replace_in_server_environment_only";
+    expect(hasGeminiEmbeddingEnv()).toBe(false);
+    expect(() => getGeminiEmbeddingConfig()).toThrow(/GEMINI_API_KEY/);
+  });
+
+  it("pins the model and dimensions to the database schema", () => {
+    process.env.GEMINI_API_KEY = "gemini-test-only";
+    delete process.env.GEMINI_EMBEDDING_MODEL;
+    expect(getGeminiEmbeddingConfig()).toEqual({ apiKey: "gemini-test-only", model: "gemini-embedding-001", dimensions: 1536 });
+    process.env.GEMINI_EMBEDDING_MODEL = "gemini-embedding-2";
+    expect(() => getGeminiEmbeddingConfig()).toThrow(/khớp schema vector/);
   });
 });

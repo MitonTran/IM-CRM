@@ -1,7 +1,7 @@
 begin;
 
 create extension if not exists pgtap with schema extensions;
-select plan(44);
+select plan(45);
 
 select has_table('public', 'ai_conversations', 'AI conversations table exists');
 select has_table('public', 'ai_messages', 'AI messages table exists');
@@ -59,11 +59,20 @@ select set_config('test.sale_conversation_id',(select id::text from public.ai_co
 select set_config('test.sale_message_id',(select id::text from public.ai_messages where role='assistant' limit 1),true);
 select results_eq('select count(*)::bigint from public.ai_conversations',array[1::bigint],'Sale A sees own conversation');
 select results_eq('select count(*)::bigint from public.ai_messages',array[2::bigint],'Request creates user and pending assistant messages');
+select lives_ok(format(
+  'select public.create_ai_assistant_request(%L::uuid,%L)',
+  current_setting('test.sale_conversation_id'),'Câu hỏi thứ hai không bị chặn theo lượt'
+),'Sale A can continue asking after the configured analysis quota');
+select set_config('test.sale_second_message_id',(
+  select id::text from public.ai_messages
+  where role='assistant' and id <> current_setting('test.sale_message_id')::uuid
+  order by created_at desc limit 1
+),true);
 select throws_ok($$insert into public.ai_conversations(owner_user_id,title) values ('d0000000-0000-4000-8000-000000000004','Giả mạo')$$,'42501',null,'Authenticated user cannot insert conversations directly');
 select throws_ok($$update public.ai_messages set content='Giả mạo' where role='assistant'$$,'42501',null,'Authenticated user cannot forge assistant content');
 select results_eq($$select count(*)::bigint from public.search_documents('alpha',10)$$,array[3::bigint],'Sale A retrieval sees organization, Team A and personal chunks');
 select results_eq($$select count(*)::bigint from public.get_document_excerpt('d4000000-0000-4000-8000-000000000003',0)$$,array[0::bigint],'Sale A cannot retrieve Team B excerpt by UUID');
-select throws_ok($$select public.create_ai_customer_analysis_request('d2000000-0000-4000-8000-000000000001')$$,'P0001','ai_daily_quota_exceeded','Assistant and customer analysis share one daily quota');
+select lives_ok($$select public.create_ai_customer_analysis_request('d2000000-0000-4000-8000-000000000001')$$,'Assistant requests do not consume the customer-analysis quota');
 
 select set_config('request.jwt.claims','{"sub":"d0000000-0000-4000-8000-000000000005","role":"authenticated"}',true);
 select results_eq('select count(*)::bigint from public.ai_conversations',array[0::bigint],'Sale B cannot see Sale A conversation');
@@ -101,6 +110,7 @@ select lives_ok(format(
 select lives_ok(format(
   'select public.fail_ai_assistant_message(%L::uuid,%L,20000)',current_setting('test.leader_message_id'),'model_timeout'
 ),'Service role records a sanitized assistant failure');
+select public.fail_ai_assistant_message(current_setting('test.sale_second_message_id')::uuid,'test_cleanup',0);
 reset role;
 
 select results_eq($$select request_count from public.ai_usage_daily where user_id='d0000000-0000-4000-8000-000000000004'$$,array[1],'Completed assistant request increments usage');
@@ -112,13 +122,13 @@ select ok(not exists(
     or coalesce(after_data,'{}'::jsonb) ?| array['content','citations','tool_calls']
   )
 ),'AI conversation audit never copies message or tool payloads');
-select results_eq($$select count(*)::bigint from public.ai_request_ledger$$,array[2::bigint],'Quota ledger contains one reservation per assistant response');
+select results_eq($$select count(*)::bigint from public.ai_request_ledger$$,array[4::bigint],'Usage ledger contains one reservation per AI request');
 select ok((select count(*) >= 6 from public.audit_logs where entity_type in ('ai_conversations','ai_messages')),'Conversation and message state changes are audited');
 
 set local role authenticated;
 select set_config('request.jwt.claims','{"sub":"d0000000-0000-4000-8000-000000000004","role":"authenticated"}',true);
 select results_eq($$select content from public.ai_messages where id=current_setting('test.sale_message_id')::uuid$$,array['Thông tin từ tài liệu Team A.'::text],'Sale A reads the completed answer in own conversation');
-select results_eq($$select count(*)::bigint from public.ai_request_ledger$$,array[1::bigint],'Sale A sees only own quota reservation');
+select results_eq($$select count(*)::bigint from public.ai_request_ledger$$,array[3::bigint],'Sale A sees only own usage reservations');
 
 reset role;
 insert into public.ai_conversations(id,owner_user_id,title,created_at,updated_at,last_message_at) values

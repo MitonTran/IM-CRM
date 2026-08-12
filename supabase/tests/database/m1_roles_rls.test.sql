@@ -7,7 +7,7 @@ select has_table('public', 'profiles', 'profiles table exists');
 select has_table('public', 'teams', 'teams table exists');
 select has_table('public', 'audit_logs', 'audit table exists');
 select policies_are('public', 'profiles', array['profiles_select_self_team_or_admin', 'profiles_update_admin_only'], 'profiles policies are explicit');
-select policies_are('public', 'teams', array['teams_delete_admin_only', 'teams_insert_admin_only', 'teams_select_own_or_admin', 'teams_update_admin_only'], 'teams policies are explicit');
+select policies_are('public', 'teams', array['teams_insert_admin_only', 'teams_select_own_or_admin', 'teams_update_admin_only'], 'teams policies are explicit and hard delete is unavailable');
 
 insert into auth.users(id, instance_id, aud, role, email, raw_user_meta_data)
 values
@@ -32,7 +32,10 @@ set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000004","role":"authenticated"}', true);
 select results_eq('select count(*)::bigint from public.profiles', array[1::bigint], 'Sale A sees only self');
 select results_eq($$select count(*)::bigint from public.teams$$, array[1::bigint], 'Sale A sees own team only');
-select results_eq($$with changed as (update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-000000000004' returning 1) select count(*)::bigint from changed$$, array[0::bigint], 'Sale A cannot elevate role');
+select throws_ok(
+  $$update public.profiles set role = 'admin' where id = '00000000-0000-0000-0000-000000000004'$$,
+  '42501', null, 'Sale A cannot elevate role through a direct table update'
+);
 
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-0000-0000-000000000005","role":"authenticated"}', true);
 select results_eq('select count(*)::bigint from public.profiles', array[1::bigint], 'Sale B sees only self');

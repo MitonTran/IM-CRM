@@ -4,7 +4,7 @@
 
 ## Trạng thái
 
-MVP đã hoàn thiện ở môi trường local với migration, RLS, kiểm thử database, unit test và Playwright E2E. Bản Vercel Preview và Supabase Preview chưa được tạo; không sử dụng dữ liệu thật trước khi hoàn tất UAT.
+MVP đã có Vercel Preview và Supabase Preview riêng, với migration, RLS, kiểm thử database, unit test và Playwright E2E. Luồng AI M6 đã được smoke test có đăng nhập bằng dữ liệu giả, gồm Gemini embedding, Groq trả lời và citation mở file private. Production chưa được triển khai; không sử dụng dữ liệu thật trước khi hoàn tất UAT và cổng M7.
 
 ## Công nghệ
 
@@ -12,7 +12,7 @@ MVP đã hoàn thiện ở môi trường local với migration, RLS, kiểm th�
 - Supabase Auth, PostgreSQL, RLS và Storage.
 - Vercel cho Preview/Production và cron được bảo vệ bằng secret.
 - Vitest, pgTAP và Playwright cho kiểm thử.
-- AI gateway phía server hỗ trợ OpenAI, OpenRouter, Gemini, DeepSeek và NVIDIA NIM.
+- AI gateway phía server hỗ trợ OpenAI, OpenRouter, Gemini, DeepSeek, Groq và NVIDIA NIM.
 
 ## Chạy local
 

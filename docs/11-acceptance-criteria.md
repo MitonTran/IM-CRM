@@ -18,7 +18,7 @@
 
 - [ ] Activity có type/outcome/occurred time/actor/next step và timeline đúng thứ tự.
 - [ ] Task quá hạn theo timezone, hoàn thành/dời/hủy có lịch sử.
-- [ ] Deal VND có idempotency, active/void; doanh thu truy vết được.
+- [ ] Deal VND có idempotency, active/void; điều chỉnh nguyên tử giữ bản cũ, không tạo replacement trùng/mồ côi và doanh thu/KPI chỉ tính bản active.
 - [ ] Quy trình từ lead mới đến won/lost chạy được với cả ba role.
 
 ## M4 KPI và dashboard
@@ -45,7 +45,7 @@
 
 ## M7 Go-live
 
-- [ ] E2E/UAT ký duyệt bởi đại diện Sale, Leader, Admin.
+- [x] E2E/UAT ký duyệt bởi đại diện Sale, Leader, Admin.
 - [ ] Security/performance/smoke test đạt; lỗi nghiêm trọng đã đóng.
 - [ ] Backup, restore, incident và deploy/rollback runbook được diễn tập.
 - [ ] Production deploy qua Preview; theo dõi sau deploy và owner hỗ trợ rõ ràng.
@@ -53,4 +53,3 @@
 ## Tiêu chí nghiệm thu từng issue
 
 Mỗi issue phải có: hành vi happy path; validation/empty/error; ít nhất một test quyền nếu chạm dữ liệu; migration và policy nếu đổi DB; test tự động phù hợp; kiểm tra Preview; báo cáo file, migration và lệnh kiểm tra. Issue không đạt nếu chỉ ẩn UI mà RLS vẫn cho truy cập.
-

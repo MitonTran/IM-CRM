@@ -14,10 +14,10 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -27,11 +27,27 @@ jobs:
           SMOKE_BASE_URL: ${{ inputs.preview_url }}
           SMOKE_REPORT_PATH: test-results/deployment-smoke.json
           VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      - run: npx playwright install --with-deps chromium
+      - run: npm run audit:preview-performance
+        env:
+          PERFORMANCE_BASE_URL: ${{ inputs.preview_url }}
+          PERFORMANCE_REPORT_PATH: test-results/preview-performance.json
+          PREVIEW_AUDIT_EMAIL: ${{ secrets.PREVIEW_AUDIT_EMAIL }}
+          PREVIEW_AUDIT_PASSWORD: ${{ secrets.PREVIEW_AUDIT_PASSWORD }}
+          VERCEL_AUTOMATION_BYPASS_SECRET: ${{ secrets.VERCEL_AUTOMATION_BYPASS_SECRET }}
+      - run: npm run audit:preview-lighthouse
+        env:
+          PERFORMANCE_BASE_URL: ${{ inputs.preview_url }}
+          LIGHTHOUSE_REPORT_PATH: test-results/preview-lighthouse.json
+          PREVIEW_AUDIT_EMAIL: ${{ secrets.PREVIEW_AUDIT_EMAIL }}
+          PREVIEW_AUDIT_PASSWORD: ${{ secrets.PREVIEW_AUDIT_PASSWORD }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: deployment-smoke
-          path: test-results/deployment-smoke.json
+          name: preview-verification
+          path: |
+            test-results/deployment-smoke.json
+            test-results/preview-performance.json
+            test-results/preview-lighthouse.json
           if-no-files-found: ignore
           retention-days: 14
-

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import { writeFile } from "node:fs/promises";
 import { E2E_PASSWORD, E2E_USERS } from "./fixtures";
 
-const APP_URL = "http://127.0.0.1:3200";
+const APP_URL = "http://localhost:3200";
 const PERFORMANCE_BUDGET = {
   ttfbMs: 2_000,
   domContentLoadedMs: 3_500,
@@ -69,6 +69,18 @@ test("health endpoint và security headers hoạt động trên bản production
   expect(headers["x-frame-options"]).toBe("DENY");
   expect(headers["x-content-type-options"]).toBe("nosniff");
   expect(headers["referrer-policy"]).toBe("strict-origin-when-cross-origin");
+});
+
+test("cron nội bộ từ chối request công khai thiếu hoặc sai secret", async ({ request }) => {
+  for (const route of ["/api/cron/ai-retention", "/api/cron/document-extraction"]) {
+    const missingSecret = await request.get(route);
+    expect(missingSecret.status()).toBe(401);
+    expect(await missingSecret.text()).toBe("Unauthorized");
+
+    const wrongSecret = await request.get(route, { headers: { authorization: "Bearer wrong-public-secret" } });
+    expect(wrongSecret.status()).toBe(401);
+    expect(await wrongSecret.text()).toBe("Unauthorized");
+  }
 });
 
 test("login, dashboard và danh sách khách nằm trong performance budget local", async ({ browser, page }, testInfo) => {

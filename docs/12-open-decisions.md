@@ -12,14 +12,15 @@ Các mục này không chặn thiết kế MVP; mặc định bên dưới đư�
 | Ngưỡng “không chăm sóc” | 3 ngày | trước M4 | cảnh báo dashboard |
 | KPI mục tiêu cụ thể | Leader/Admin cấu hình, không hard-code | trước M4 UAT | seed và báo cáo |
 | Attribution doanh thu sau chuyển giao | owner tại thời điểm deal | trước M4 | KPI cá nhân |
+| Điều chỉnh giao dịch | Sale sửa bản tự tạo trong 24 giờ; Leader/Admin theo phạm vi; tạo bản thay thế, không ghi đè | đã chốt trong UAT M7 ngày 2026-08-10 | deal RPC, audit và KPI |
 | Giới hạn file | 25 MB/file, allowlist MIME | trước M5 | Storage/cost |
 | Quyền tài liệu cá nhân | đúng một user; chưa có ACL nhiều người | trước M5 | schema ACL |
 | OCR và parser | bật theo định dạng/chi phí đã thử nghiệm | trước M5 UAT | worker/cost/chất lượng |
 | Retention file đã xóa | không purge tự động trong MVP | trước Production | chi phí/pháp lý |
 | Retention AI | 90 ngày hội thoại, analysis giữ cùng khách | trước M6/Production | privacy/cost |
-| Model/quota AI | cấu hình server, quota theo user/ngày | trước M6 | chi phí/chất lượng |
+| Model/quota AI | Groq chính, Gemini dự phòng; trợ lý hỏi đáp không giới hạn lượt CRM, phân tích khách hàng vẫn có quota/ngày | đã chốt trong UAT M7 ngày 2026-08-11 | chi phí/chất lượng |
 | MFA Admin | bật nếu plan/quy trình hỗ trợ | trước Production | bảo mật/vận hành |
-| Backup/PITR | chọn theo Supabase plan và RTO/RPO | trước Production | chi phí/khôi phục |
+| Backup/PITR | đã chốt gói Free ngày 2026-08-10: logical export mã hóa mỗi 24 giờ, backup Storage riêng, RPO 24 giờ và RTO 8 giờ; không dùng PITR | đã chốt trước Production | vận hành thủ công hơn, phải giữ key và diễn tập restore cô lập |
 
 ## Điều kiện bắt buộc dừng và hỏi lại
 
@@ -28,4 +29,3 @@ Các mục này không chặn thiết kế MVP; mặc định bên dưới đư�
 - AI ghi/sửa/xóa CRM; tích hợp Zalo/Facebook/tổng đài trong MVP.
 - Dữ liệu tài chính chi tiết, sức khỏe, giấy tờ tùy thân hoặc dữ liệu nhạy cảm.
 - Bất kỳ thay đổi nào tác động schema cốt lõi hoặc mô hình quyền đã chốt.
-

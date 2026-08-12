@@ -13,9 +13,9 @@ export type AiAnalysisActionState = { ok: boolean; message: string };
 const inputSchema = z.object({ customerId: z.uuid() });
 
 function friendlyError(message: string) {
-  if (message.includes("ai_daily_quota_exceeded")) return "Bạn đã dùng hết lượt phân tích AI hôm nay.";
+  if (message.includes("ai_daily_quota_exceeded")) return "Trợ lý đang bận. Vui lòng thử lại sau.";
   if (message.includes("ai_disabled")) return "Trợ lý AI đang được quản trị viên tạm tắt.";
-  if (message.includes("ai_input_too_large")) return "Timeline quá dài để phân tích an toàn. Hãy thu gọn dữ liệu đầu vào.";
+  if (message.includes("ai_input_too_large")) return "Lịch sử chăm sóc quá dài. Vui lòng thử lại sau khi cập nhật thông tin chính.";
   if (message.includes("scope_denied") || message.includes("request_denied")) return "Bạn không có quyền phân tích khách hàng này.";
   return "Không thể hoàn tất phân tích AI. Vui lòng thử lại sau.";
 }
@@ -38,12 +38,12 @@ export async function analyzeCustomerAction(
   const { data: claims, error: authError } = await supabase.auth.getClaims();
   const userId = String(claims?.claims?.sub ?? "");
   if (authError || !userId) return { ok: false, message: "Phiên đăng nhập đã hết hạn. Hãy đăng nhập lại." };
-  if (!hasAiProviderEnv()) return { ok: false, message: "Chưa cấu hình AI_PROVIDER hoặc API key tương ứng trên máy chủ." };
+  if (!hasAiProviderEnv()) return { ok: false, message: "Trợ lý đang tạm gián đoạn. Vui lòng liên hệ quản trị viên." };
   let admin: ReturnType<typeof createAdminClient>;
   try {
     admin = createAdminClient();
   } catch {
-    return { ok: false, message: "Máy chủ chưa hoàn tất cấu hình AI an toàn." };
+    return { ok: false, message: "Trợ lý đang tạm gián đoạn. Vui lòng liên hệ quản trị viên." };
   }
 
   const startedAt = Date.now();

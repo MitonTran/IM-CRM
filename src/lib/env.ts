@@ -32,13 +32,15 @@ export function getSupabaseServiceRoleKey() {
   return key!;
 }
 
-export const AI_PROVIDERS = ["openai", "openrouter", "gemini", "deepseek", "nvidia"] as const;
+export const AI_PROVIDERS = ["openai", "openrouter", "gemini", "deepseek", "groq", "nvidia"] as const;
 export type AiProvider = (typeof AI_PROVIDERS)[number];
+export type AiProviderConfig = { provider: AiProvider; apiKey: string; model: string; baseURL?: string };
 export const AI_PROVIDER_LABELS: Record<AiProvider, string> = {
   openai: "OpenAI",
   openrouter: "OpenRouter",
   gemini: "Google Gemini",
   deepseek: "DeepSeek",
+  groq: "Groq",
   nvidia: "NVIDIA NIM",
 };
 
@@ -47,6 +49,7 @@ const AI_PROVIDER_CONFIG: Record<AiProvider, { keyName: string; defaultModel: st
   openrouter: { keyName: "OPENROUTER_API_KEY", defaultModel: "openrouter/free", baseURL: "https://openrouter.ai/api/v1" },
   gemini: { keyName: "GEMINI_API_KEY", defaultModel: "gemini-3.1-flash-lite", baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/" },
   deepseek: { keyName: "DEEPSEEK_API_KEY", defaultModel: "deepseek-v4-flash", baseURL: "https://api.deepseek.com" },
+  groq: { keyName: "GROQ_API_KEY", defaultModel: "openai/gpt-oss-20b", baseURL: "https://api.groq.com/openai/v1" },
   nvidia: { keyName: "NVIDIA_NIM_API_KEY", defaultModel: "nvidia/nemotron-3-nano-30b-a3b", baseURL: "https://integrate.api.nvidia.com/v1" },
 };
 
@@ -65,8 +68,7 @@ export function hasAiProviderEnv() {
   }
 }
 
-export function getAiProviderConfig() {
-  const provider = getAiProvider();
+function getProviderConfig(provider: AiProvider, modelOverride?: string): AiProviderConfig {
   const providerConfig = AI_PROVIDER_CONFIG[provider];
   const apiKey = process.env[providerConfig.keyName];
   if (!isUsable(apiKey)) throw new Error(`Thiếu ${providerConfig.keyName} phía máy chủ.`);
@@ -75,7 +77,33 @@ export function getAiProviderConfig() {
   return {
     provider,
     apiKey: apiKey!,
-    model: process.env.AI_MODEL?.trim() || legacyOpenAIModel || providerConfig.defaultModel,
+    model: modelOverride || legacyOpenAIModel || providerConfig.defaultModel,
     baseURL: providerConfig.baseURL,
   };
+}
+
+export function getAiProviderConfig() {
+  return getProviderConfig(getAiProvider(), process.env.AI_MODEL?.trim());
+}
+
+export function getGeminiFallbackConfig() {
+  if (getAiProvider() !== "groq" || !isUsable(process.env.GEMINI_API_KEY)) return null;
+  return getProviderConfig("gemini", process.env.GEMINI_FALLBACK_MODEL?.trim());
+}
+
+export const GEMINI_EMBEDDING_MODEL = "gemini-embedding-001";
+export const EMBEDDING_DIMENSIONS = 1536;
+
+export function hasGeminiEmbeddingEnv() {
+  return isUsable(process.env.GEMINI_API_KEY);
+}
+
+export function getGeminiEmbeddingConfig() {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!isUsable(apiKey)) throw new Error("Thiếu GEMINI_API_KEY phía máy chủ cho document embedding.");
+  const model = process.env.GEMINI_EMBEDDING_MODEL?.trim() || GEMINI_EMBEDDING_MODEL;
+  if (model !== GEMINI_EMBEDDING_MODEL) {
+    throw new Error(`GEMINI_EMBEDDING_MODEL phải là ${GEMINI_EMBEDDING_MODEL} để khớp schema vector.`);
+  }
+  return { apiKey: apiKey!, model, dimensions: EMBEDDING_DIMENSIONS };
 }
